@@ -79,7 +79,7 @@ export default function EvaluateModulePage({ params }: { params: Promise<{ modul
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="space-y-4">
           {running && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="glass rounded-2xl ring-1 ring-violet-500/20 p-4">
+              <div className="glass rounded-2xl ring-1 ring-orange-500/20 p-4">
                 <EvalProgressBar current={progress.current} total={progress.total} />
               </div>
             </motion.div>

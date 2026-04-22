@@ -78,14 +78,14 @@ export function EvalForm({ sampleInput, onRun, running }: EvalFormProps) {
     <div className="glass rounded-2xl p-6">
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20">
-            <FileJson className="h-4 w-4 text-violet-400" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/15 to-amber-500/15">
+            <FileJson className="h-4 w-4 text-orange-500" />
           </div>
           <div>
             <h3 className="font-bold">Test Cases</h3>
             <p className="text-xs text-muted-foreground">
               {usingSample ? (
-                <span className="text-violet-400">{caseCount} sample cases loaded</span>
+                <span className="text-orange-500">{caseCount} sample cases loaded</span>
               ) : (
                 <span>{caseCount} custom cases</span>
               )}
@@ -137,7 +137,7 @@ export function EvalForm({ sampleInput, onRun, running }: EvalFormProps) {
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={handleRun} disabled={running || !jsonText.trim() || !configured} className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow">
+        <Button onClick={handleRun} disabled={running || !jsonText.trim() || !configured} className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow">
           {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running...</>) : (<><Play className="mr-2 h-4 w-4" />Run Evaluation</>)}
         </Button>
         {!usingSample && (

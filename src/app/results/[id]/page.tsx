@@ -59,7 +59,7 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
               <Icon className="h-5 w-5" />
             </div>
             <div>

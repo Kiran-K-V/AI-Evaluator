@@ -131,7 +131,7 @@ export default function RunAllPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="glass rounded-2xl p-6">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/25">
               <Zap className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -159,7 +159,7 @@ export default function RunAllPage() {
           <div className="mb-5">
             <div className="mb-2 flex items-center justify-between">
               <Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Modules to Evaluate</Label>
-              <button onClick={toggleAll} className="text-[10px] font-semibold text-violet-400 hover:text-violet-300 transition-colors">
+              <button onClick={toggleAll} className="text-[10px] font-semibold text-orange-500 hover:text-orange-400 transition-colors">
                 {MODULES.every((m) => enabledModules[m.slug]) ? "Deselect All" : "Select All"}
               </button>
             </div>
@@ -175,13 +175,13 @@ export default function RunAllPage() {
                     className={cn(
                       "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all",
                       enabled
-                        ? "glass ring-1 ring-violet-500/30 text-foreground"
+                        ? "glass ring-1 ring-orange-500/30 text-foreground"
                         : "glass-subtle text-muted-foreground opacity-50"
                     )}
                   >
                     <div className={cn(
                       "flex h-4 w-4 items-center justify-center rounded border transition-colors",
-                      enabled ? "border-violet-500 bg-violet-500 text-white" : "border-muted-foreground/30"
+                      enabled ? "border-orange-500 bg-orange-500 text-white" : "border-muted-foreground/30"
                     )}>
                       {enabled && <Check className="h-2.5 w-2.5" />}
                     </div>
@@ -193,7 +193,7 @@ export default function RunAllPage() {
             </div>
           </div>
 
-          <Button onClick={handleRunAll} disabled={running || !apiKey || selectedModules.length === 0} className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow">
+          <Button onClick={handleRunAll} disabled={running || !apiKey || selectedModules.length === 0} className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow">
             {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running {selectedModules.length} modules...</>) : (<><Play className="mr-2 h-4 w-4" />Run {selectedModules.length} Module{selectedModules.length !== 1 ? "s" : ""}</>)}
           </Button>
         </div>
@@ -202,7 +202,7 @@ export default function RunAllPage() {
       {/* Progress */}
       {running && currentModule && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="glass rounded-2xl ring-1 ring-violet-500/20 p-4">
+          <div className="glass rounded-2xl ring-1 ring-orange-500/20 p-4">
             <p className="mb-2 text-sm font-semibold">
               Running: {MODULES.find((m) => m.slug === currentModule)?.name}
             </p>
@@ -230,12 +230,12 @@ export default function RunAllPage() {
 
           return (
             <motion.div key={mr.slug} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <div className={cn("glass rounded-2xl p-4 transition-all", mr.status === "running" && "ring-1 ring-violet-500/30 animate-pulse")}>
+              <div className={cn("glass rounded-2xl p-4 transition-all", mr.status === "running" && "ring-1 ring-orange-500/30 animate-pulse")}>
                 <div className="flex items-center gap-4">
                   <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all",
                     mr.status === "done" && mr.result?.passed ? "bg-emerald-500/10 text-emerald-400" :
                     mr.status === "done" && !mr.result?.passed ? "bg-red-500/10 text-red-400" :
-                    mr.status === "running" ? "bg-violet-500/20 text-violet-400" :
+                    mr.status === "running" ? "bg-orange-500/15 text-orange-500" :
                     mr.status === "error" ? "bg-red-500/10 text-red-400" :
                     "bg-muted/50 text-muted-foreground"
                   )}>
@@ -262,7 +262,7 @@ export default function RunAllPage() {
                   <div>
                     {mr.status === "done" && mr.result && <PassFailBadge passed={mr.result.passed} />}
                     {mr.status === "error" && <PassFailBadge passed={false} />}
-                    {mr.status === "running" && <span className="text-xs font-semibold text-violet-400">Running</span>}
+                    {mr.status === "running" && <span className="text-xs font-semibold text-orange-500">Running</span>}
                   </div>
                 </div>
               </div>

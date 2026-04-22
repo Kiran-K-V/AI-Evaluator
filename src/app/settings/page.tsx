@@ -66,7 +66,7 @@ export default function SettingsPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="glass rounded-2xl p-6">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/25">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -98,7 +98,7 @@ export default function SettingsPage() {
                       onClick={() => setModel(m)}
                       className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
                         model === m
-                          ? "bg-violet-500/20 text-violet-400 ring-1 ring-violet-500/30"
+                          ? "bg-orange-500/15 text-orange-500 ring-1 ring-orange-500/30"
                           : "glass-subtle text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -117,7 +117,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button onClick={handleSave} className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow">
+              <Button onClick={handleSave} className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow">
                 Save Configuration
               </Button>
               <Button variant="outline" onClick={handleTest} disabled={testing || !apiKey} className="rounded-xl glass-subtle">
@@ -145,8 +145,8 @@ export default function SettingsPage() {
                 }}
                 className={`group flex flex-col items-start rounded-xl p-3 text-left transition-all neu-hover ${
                   baseUrl === provider.url
-                    ? "glass ring-1 ring-violet-500/40 shadow-violet-500/10"
-                    : "glass-subtle hover:ring-1 hover:ring-violet-500/20"
+                    ? "glass ring-1 ring-orange-500/40 shadow-orange-500/10"
+                    : "glass-subtle hover:ring-1 hover:ring-orange-500/20"
                 }`}
               >
                 <span className="text-sm font-semibold">{provider.name}</span>

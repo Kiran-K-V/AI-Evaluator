@@ -19,7 +19,7 @@ function getPageTitle(pathname: string): string {
     const mod = MODULES.find((m) => m.slug === slug);
     return mod ? mod.name : "Evaluation";
   }
-  return "Netra AI";
+  return "AI Eval Platform";
 }
 
 export function TopNav() {
@@ -28,7 +28,7 @@ export function TopNav() {
   const title = getPageTitle(pathname);
 
   const startTour = () => {
-    window.dispatchEvent(new CustomEvent("netra:start-tour"));
+    window.dispatchEvent(new CustomEvent("eval:start-tour"));
   };
 
   return (

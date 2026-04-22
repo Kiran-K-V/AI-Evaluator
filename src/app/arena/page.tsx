@@ -135,10 +135,10 @@ export default function ArenaPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Model A */}
-            <div className="glass-subtle rounded-xl p-4 ring-1 ring-violet-500/20">
+            <div className="glass-subtle rounded-xl p-4 ring-1 ring-sky-500/20">
               <div className="mb-3 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-violet-500" />
-                <span className="text-sm font-bold text-violet-400">Model A (Challenger)</span>
+                <div className="h-3 w-3 rounded-full bg-sky-500" />
+                <span className="text-sm font-bold text-sky-600">Model A (Challenger)</span>
               </div>
               <div className="space-y-3">
                 <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Model Name</Label><Input value={modelA.name} onChange={(e) => setModelA({ ...modelA, name: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
@@ -221,9 +221,9 @@ export default function ArenaPage() {
       {doneResults.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="grid grid-cols-3 gap-3">
-            <div className={cn("glass rounded-2xl p-5 text-center ring-1", winsA > winsB ? "ring-violet-500/40" : "ring-border/30")}>
-              {winsA > winsB && <Crown className="mx-auto mb-1 h-5 w-5 text-violet-400" />}
-              <p className="text-3xl font-bold text-violet-400">{winsA}</p>
+            <div className={cn("glass rounded-2xl p-5 text-center ring-1", winsA > winsB ? "ring-sky-500/40" : "ring-border/30")}>
+              {winsA > winsB && <Crown className="mx-auto mb-1 h-5 w-5 text-sky-500" />}
+              <p className="text-3xl font-bold text-sky-500">{winsA}</p>
               <p className="text-xs font-semibold text-muted-foreground mt-1">{modelA.name}</p>
             </div>
             <div className="glass rounded-2xl p-5 text-center">
@@ -254,13 +254,13 @@ export default function ArenaPage() {
 
           return (
             <motion.div key={r.slug} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <div className={cn("glass rounded-2xl p-4 transition-all", isRunning && "ring-1 ring-violet-500/20")}>
+              <div className={cn("glass rounded-2xl p-4 transition-all", isRunning && "ring-1 ring-orange-500/20")}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground">
                     <Icon className="h-4 w-4" />
                   </div>
                   <h3 className="font-semibold flex-1">{mod.name}</h3>
-                  {isRunning && <Loader2 className="h-4 w-4 animate-spin text-violet-400" />}
+                  {isRunning && <Loader2 className="h-4 w-4 animate-spin text-orange-500" />}
                 </div>
 
                 {isDone && (
@@ -279,8 +279,8 @@ export default function ArenaPage() {
                           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-2">{def.label}</p>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-violet-500" />
-                              <span className={cn("font-mono font-bold text-sm", aWins && !tied ? "text-violet-400" : "text-muted-foreground")}>
+                              <div className="h-2 w-2 rounded-full bg-sky-500" />
+                              <span className={cn("font-mono font-bold text-sm", aWins && !tied ? "text-sky-500" : "text-muted-foreground")}>
                                 {valA.toFixed(1)}{def.unit}
                               </span>
                             </div>
@@ -293,7 +293,7 @@ export default function ArenaPage() {
                             </div>
                           </div>
                           <div className="mt-2 flex h-1.5 rounded-full overflow-hidden bg-muted/30">
-                            <div className="bg-violet-500 transition-all" style={{ width: `${valA + valB > 0 ? (valA / (valA + valB)) * 100 : 50}%` }} />
+                            <div className="bg-sky-500 transition-all" style={{ width: `${valA + valB > 0 ? (valA / (valA + valB)) * 100 : 50}%` }} />
                             <div className="bg-orange-500 transition-all flex-1" />
                           </div>
                         </div>
@@ -305,7 +305,7 @@ export default function ArenaPage() {
                 {isDone && (
                   <div className="mt-3 flex items-center justify-between">
                     <PassFailBadge passed={r.modelA?.passed ?? false} />
-                    <span className={cn("text-xs font-bold px-3 py-1 rounded-lg", winner === "A" ? "text-violet-400 bg-violet-500/10" : winner === "B" ? "text-orange-400 bg-orange-500/10" : "text-muted-foreground bg-muted/30")}>
+                    <span className={cn("text-xs font-bold px-3 py-1 rounded-lg", winner === "A" ? "text-sky-500 bg-sky-500/10" : winner === "B" ? "text-orange-500 bg-orange-500/10" : "text-muted-foreground bg-muted/30")}>
                       {winner === "A" ? `${modelA.name} wins` : winner === "B" ? `${modelB.name} wins` : "Draw"}
                     </span>
                     <PassFailBadge passed={r.modelB?.passed ?? false} />

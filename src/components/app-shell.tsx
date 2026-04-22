@@ -15,9 +15,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <TooltipProvider>
-        <div className="bg-orb" style={{ width: 600, height: 600, top: -200, right: -100, background: "oklch(0.6 0.25 270 / 20%)" }} />
-        <div className="bg-orb" style={{ width: 500, height: 500, bottom: -150, left: -100, background: "oklch(0.6 0.2 330 / 15%)" }} />
-        <div className="bg-orb" style={{ width: 400, height: 400, top: "40%", left: "30%", background: "oklch(0.65 0.18 200 / 10%)" }} />
+        <div className="bg-orb" style={{ width: 600, height: 600, top: -200, right: -100, background: "oklch(0.75 0.15 50 / 20%)" }} />
+        <div className="bg-orb" style={{ width: 500, height: 500, bottom: -150, left: -100, background: "oklch(0.7 0.12 30 / 15%)" }} />
+        <div className="bg-orb" style={{ width: 400, height: 400, top: "40%", left: "30%", background: "oklch(0.8 0.1 70 / 12%)" }} />
 
         <div className="relative z-10 flex min-h-screen">
           <Sidebar

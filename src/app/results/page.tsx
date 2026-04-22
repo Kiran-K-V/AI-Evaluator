@@ -89,10 +89,10 @@ export default function ResultsPage() {
             const Icon = mod ? iconMap[mod.icon] || FlaskConical : FlaskConical;
             return (
               <motion.div key={run.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                <div className="glass group rounded-2xl transition-all hover:ring-1 hover:ring-violet-500/30">
+                <div className="glass group rounded-2xl transition-all hover:ring-1 hover:ring-orange-500/30">
                   <div className="flex items-center gap-4 p-4">
                     <Link href={`/results/${run.id}`} className="flex flex-1 items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -128,7 +128,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
       onClick={onClick}
       className={`rounded-xl px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
         active
-          ? "bg-violet-500/20 text-violet-400 ring-1 ring-violet-500/30"
+          ? "bg-orange-500/15 text-orange-500 ring-1 ring-orange-500/30"
           : "glass-subtle text-muted-foreground hover:text-foreground"
       }`}
     >

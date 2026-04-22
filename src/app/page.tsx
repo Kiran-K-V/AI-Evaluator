@@ -49,7 +49,7 @@ export default function DashboardPage() {
       {/* Overview Cards */}
       <motion.div data-tour="dashboard-overview" variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Runs", value: totalRuns, icon: Activity, gradient: "from-violet-500 to-purple-600", decimals: 0 },
+          { label: "Total Runs", value: totalRuns, icon: Activity, gradient: "from-orange-500 to-amber-600", decimals: 0 },
           { label: "Passed", value: passedRuns, icon: TrendingUp, gradient: "from-emerald-500 to-teal-600", decimals: 0 },
           { label: "Failed", value: failedRuns, icon: TrendingDown, gradient: "from-red-500 to-rose-600", decimals: 0 },
           { label: "Avg Score", value: avgScore, icon: FlaskConical, gradient: "from-amber-500 to-orange-600", decimals: 1, suffix: "%" },
@@ -75,7 +75,7 @@ export default function DashboardPage() {
         <Link href="/run-all">
           <div className="group glass rounded-2xl p-5 transition-all neu-hover cursor-pointer">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/25">
                 <Zap className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1">
@@ -115,7 +115,7 @@ export default function DashboardPage() {
                 <Link href={`/evaluate/${mod.slug}`}>
                   <div className="group glass h-full rounded-2xl p-5 transition-all neu-hover cursor-pointer">
                     <div className="mb-3 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 text-violet-400 transition-all group-hover:from-violet-500 group-hover:to-purple-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-violet-500/25">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/15 to-amber-500/15 text-orange-500 transition-all group-hover:from-orange-500 group-hover:to-amber-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-orange-500/25">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div>
@@ -126,7 +126,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <p className="mb-4 flex-1 text-sm leading-relaxed text-muted-foreground">{mod.description}</p>
-                    <div className="flex items-center text-sm font-semibold text-violet-400">
+                    <div className="flex items-center text-sm font-semibold text-orange-500">
                       Run Evaluation <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
           <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">Recent Evaluations</h2>
           {runs.length > 0 && (
             <Link href="/results">
-              <Button variant="ghost" size="sm" className="text-violet-400 hover:text-violet-300">
+              <Button variant="ghost" size="sm" className="text-orange-500 hover:text-orange-400">
                 View All <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
@@ -164,8 +164,8 @@ export default function DashboardPage() {
               return (
                 <motion.div key={run.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.03 * i }}>
                   <Link href={`/results/${run.id}`}>
-                    <div className="glass group flex cursor-pointer items-center gap-4 rounded-2xl p-4 transition-all hover:ring-1 hover:ring-violet-500/30">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                    <div className="glass group flex cursor-pointer items-center gap-4 rounded-2xl p-4 transition-all hover:ring-1 hover:ring-orange-500/30">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">

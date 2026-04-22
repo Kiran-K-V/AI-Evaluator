@@ -8,13 +8,13 @@ const Joyride = dynamic(() => import("react-joyride").then((mod) => mod.Joyride)
   ssr: false,
 });
 
-const TOUR_SEEN_KEY = "netra_tour_seen";
+const TOUR_SEEN_KEY = "eval_tour_seen";
 
 const steps: Step[] = [
   {
     target: "[data-tour='sidebar']",
     content:
-      "Welcome to Netra AI! This is your navigation sidebar. Browse evaluation modules, batch tools, and results history here.",
+      "Welcome! This is your navigation sidebar. Browse evaluation modules, batch tools, and results history here.",
     placement: "right",
     skipBeacon: true,
   },
@@ -65,8 +65,8 @@ export function OnboardingTour() {
 
   useEffect(() => {
     const handler = () => setRun(true);
-    window.addEventListener("netra:start-tour", handler);
-    return () => window.removeEventListener("netra:start-tour", handler);
+    window.addEventListener("eval:start-tour", handler);
+    return () => window.removeEventListener("eval:start-tour", handler);
   }, []);
 
   const handleEvent = useCallback((data: EventData) => {
@@ -93,10 +93,10 @@ export function OnboardingTour() {
         skip: "Skip tour",
       }}
       options={{
-        primaryColor: "#8b5cf6",
+        primaryColor: "#f97316",
         overlayColor: "rgba(0, 0, 0, 0.5)",
-        backgroundColor: "rgba(15, 15, 25, 0.95)",
-        textColor: "#e4e4e7",
+        backgroundColor: "rgba(255, 255, 255, 0.97)",
+        textColor: "#1c1917",
         zIndex: 10000,
         showProgress: true,
         buttons: ["back", "close", "primary", "skip"],
