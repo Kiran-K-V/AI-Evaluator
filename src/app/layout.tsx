@@ -14,7 +14,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Netra AI — Evaluation Platform",
+  title: "AI — Evaluation Platform",
   description: "AI Model Evaluation Platform — benchmark LLMs across tool calling, hallucination, RAG, safety, and more.",
 };
 
