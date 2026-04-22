@@ -19,6 +19,7 @@ import { getModelConfig } from "@/lib/settings";
 import { saveRun } from "@/lib/storage";
 import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
+import { getResultScore } from "@/lib/utils";
 
 const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge };
 
@@ -100,8 +101,7 @@ export default function RunAllPage() {
   const overallScore = completedModules.length > 0
     ? completedModules.reduce((sum, m) => {
         if (!m.result) return sum;
-        const vals = Object.values(m.result.metrics);
-        return sum + (vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0);
+        return sum + getResultScore(m.slug, m.result);
       }, 0) / completedModules.length
     : 0;
 

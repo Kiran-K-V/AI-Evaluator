@@ -14,6 +14,7 @@ import { AnimatedCounter } from "@/components/metrics/animated-counter";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import { getRuns } from "@/lib/storage";
 import { MODULES } from "@/lib/modules";
+import { getRunScore } from "@/lib/utils";
 import type { EvaluationRun } from "@/lib/types";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -38,10 +39,7 @@ export default function DashboardPage() {
   const passedRuns = runs.filter((r) => r.passed).length;
   const failedRuns = runs.filter((r) => !r.passed).length;
   const avgScore = runs.length > 0
-    ? runs.reduce((sum, r) => {
-        const vals = Object.values(r.metrics);
-        return sum + (vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0);
-      }, 0) / runs.length
+    ? runs.reduce((sum, r) => sum + getRunScore(r), 0) / runs.length
     : 0;
 
   const recentRuns = runs.slice(0, 8);

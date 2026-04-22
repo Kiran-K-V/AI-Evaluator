@@ -16,7 +16,7 @@ import { MODULES } from "@/lib/modules";
 import { getModelConfig } from "@/lib/settings";
 import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, getResultScore } from "@/lib/utils";
 
 const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge };
 
@@ -91,9 +91,9 @@ export default function ArenaPage() {
   let winsA = 0, winsB = 0, draws = 0;
   for (const r of doneResults) {
     if (!r.modelA || !r.modelB) continue;
-    const scoreA = Object.values(r.modelA.metrics).reduce((a, b) => a + b, 0) / (Object.values(r.modelA.metrics).length || 1);
-    const scoreB = Object.values(r.modelB.metrics).reduce((a, b) => a + b, 0) / (Object.values(r.modelB.metrics).length || 1);
-    if (Math.abs(scoreA - scoreB) < 1) draws++;
+    const scoreA = getResultScore(r.slug, r.modelA);
+    const scoreB = getResultScore(r.slug, r.modelB);
+    if (Math.abs(scoreA - scoreB) < 2) draws++;
     else if (scoreA > scoreB) winsA++;
     else winsB++;
   }
@@ -188,11 +188,11 @@ export default function ArenaPage() {
           const mod = MODULES.find((m) => m.slug === r.slug)!;
           const Icon = iconMap[mod.icon] || FlaskConical;
 
-          const scoreA = r.modelA ? Object.values(r.modelA.metrics).reduce((a, b) => a + b, 0) / (Object.values(r.modelA.metrics).length || 1) : 0;
-          const scoreB = r.modelB ? Object.values(r.modelB.metrics).reduce((a, b) => a + b, 0) / (Object.values(r.modelB.metrics).length || 1) : 0;
+          const scoreA = r.modelA ? getResultScore(r.slug, r.modelA) : 0;
+          const scoreB = r.modelB ? getResultScore(r.slug, r.modelB) : 0;
           const isRunning = r.statusA === "running" || r.statusB === "running";
           const isDone = r.statusA === "done" && r.statusB === "done";
-          const winner = isDone ? (Math.abs(scoreA - scoreB) < 1 ? "draw" : scoreA > scoreB ? "A" : "B") : null;
+          const winner = isDone ? (Math.abs(scoreA - scoreB) < 2 ? "draw" : scoreA > scoreB ? "A" : "B") : null;
 
           return (
             <motion.div key={r.slug} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
