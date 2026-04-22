@@ -28,6 +28,8 @@ const statusText = {
 };
 
 export function MetricCard({ label, value, unit = "", status = "neutral", delay = 0, decimals = 1 }: MetricCardProps) {
+  const displayValue = unit === "%" ? Math.min(Math.max(value, 0), 100) : value;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -40,7 +42,7 @@ export function MetricCard({ label, value, unit = "", status = "neutral", delay 
         </p>
         <div className="mt-2 flex items-baseline gap-1">
           <AnimatedCounter
-            value={value}
+            value={displayValue}
             decimals={decimals}
             className={cn("text-3xl font-bold tracking-tight", statusText[status])}
           />

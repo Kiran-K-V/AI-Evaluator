@@ -47,7 +47,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       {/* Overview Cards */}
-      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <motion.div data-tour="dashboard-overview" variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Total Runs", value: totalRuns, icon: Activity, gradient: "from-violet-500 to-purple-600", decimals: 0 },
           { label: "Passed", value: passedRuns, icon: TrendingUp, gradient: "from-emerald-500 to-teal-600", decimals: 0 },
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Quick Actions */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <motion.div data-tour="quick-actions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Link href="/run-all">
           <div className="group glass rounded-2xl p-5 transition-all neu-hover cursor-pointer">
             <div className="flex items-center gap-4">
@@ -103,7 +103,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Module Quick Launch */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}>
+      <motion.div data-tour="module-grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}>
         <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">Evaluation Modules</h2>
         <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {MODULES.map((mod) => {

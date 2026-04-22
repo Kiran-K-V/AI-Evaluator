@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
-  Zap, Play, Loader2,
+  Zap, Play, Loader2, Check,
   Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,14 +19,14 @@ import { getModelConfig } from "@/lib/settings";
 import { saveRun } from "@/lib/storage";
 import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
-import { getResultScore } from "@/lib/utils";
+import { cn, getResultScore } from "@/lib/utils";
 
 const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge };
 
 interface ModuleResult {
   slug: ModuleSlug;
   result: EvaluationResult | null;
-  status: "pending" | "running" | "done" | "error";
+  status: "pending" | "running" | "done" | "error" | "skipped";
   error?: string;
 }
 
@@ -38,6 +38,9 @@ export default function RunAllPage() {
   const [running, setRunning] = useState(false);
   const [currentModule, setCurrentModule] = useState<string | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [enabledModules, setEnabledModules] = useState<Record<string, boolean>>(
+    Object.fromEntries(MODULES.map((m) => [m.slug, true]))
+  );
   const [moduleResults, setModuleResults] = useState<ModuleResult[]>(
     MODULES.map((m) => ({ slug: m.slug, result: null, status: "pending" }))
   );
@@ -52,18 +55,35 @@ export default function RunAllPage() {
     });
   }, []);
 
+  const toggleModule = (slug: string) => {
+    setEnabledModules((prev) => ({ ...prev, [slug]: !prev[slug] }));
+  };
+
+  const toggleAll = () => {
+    const allEnabled = MODULES.every((m) => enabledModules[m.slug]);
+    setEnabledModules(Object.fromEntries(MODULES.map((m) => [m.slug, !allEnabled])));
+  };
+
+  const selectedModules = MODULES.filter((m) => enabledModules[m.slug]);
+
   const handleRunAll = async () => {
     if (!apiKey) { toast.error("Configure API key first"); return; }
+    if (selectedModules.length === 0) { toast.error("Select at least one module"); return; }
 
     setRunning(true);
     const config = { apiKey, model, baseUrl };
-    const updatedResults: ModuleResult[] = MODULES.map((m) => ({ slug: m.slug, result: null, status: "pending" as const }));
+    const updatedResults: ModuleResult[] = MODULES.map((m) => ({
+      slug: m.slug,
+      result: null,
+      status: enabledModules[m.slug] ? "pending" as const : "skipped" as const,
+    }));
     setModuleResults(updatedResults);
 
     for (let i = 0; i < MODULES.length; i++) {
       const mod = MODULES[i];
-      setCurrentModule(mod.slug);
+      if (!enabledModules[mod.slug]) continue;
 
+      setCurrentModule(mod.slug);
       updatedResults[i] = { ...updatedResults[i], status: "running" };
       setModuleResults([...updatedResults]);
 
@@ -91,7 +111,7 @@ export default function RunAllPage() {
 
     setCurrentModule(null);
     setRunning(false);
-    toast.success("All modules evaluated!");
+    toast.success("Evaluation complete!");
   };
 
   if (!mounted) return null;
@@ -116,7 +136,7 @@ export default function RunAllPage() {
             </div>
             <div>
               <h2 className="text-xl font-bold">Run All Modules</h2>
-              <p className="text-sm text-muted-foreground">Execute all 7 evaluation benchmarks sequentially using sample data</p>
+              <p className="text-sm text-muted-foreground">Execute evaluation benchmarks sequentially using sample data</p>
             </div>
           </div>
 
@@ -135,8 +155,46 @@ export default function RunAllPage() {
             </div>
           </div>
 
-          <Button onClick={handleRunAll} disabled={running || !apiKey} className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow">
-            {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running all modules...</>) : (<><Play className="mr-2 h-4 w-4" />Run All 7 Modules</>)}
+          {/* Module selection */}
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between">
+              <Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Modules to Evaluate</Label>
+              <button onClick={toggleAll} className="text-[10px] font-semibold text-violet-400 hover:text-violet-300 transition-colors">
+                {MODULES.every((m) => enabledModules[m.slug]) ? "Deselect All" : "Select All"}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {MODULES.map((mod) => {
+                const Icon = iconMap[mod.icon] || FlaskConical;
+                const enabled = enabledModules[mod.slug];
+                return (
+                  <button
+                    key={mod.slug}
+                    onClick={() => toggleModule(mod.slug)}
+                    disabled={running}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all",
+                      enabled
+                        ? "glass ring-1 ring-violet-500/30 text-foreground"
+                        : "glass-subtle text-muted-foreground opacity-50"
+                    )}
+                  >
+                    <div className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded border transition-colors",
+                      enabled ? "border-violet-500 bg-violet-500 text-white" : "border-muted-foreground/30"
+                    )}>
+                      {enabled && <Check className="h-2.5 w-2.5" />}
+                    </div>
+                    <Icon className="h-3.5 w-3.5" />
+                    {mod.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <Button onClick={handleRunAll} disabled={running || !apiKey || selectedModules.length === 0} className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow">
+            {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running {selectedModules.length} modules...</>) : (<><Play className="mr-2 h-4 w-4" />Run {selectedModules.length} Module{selectedModules.length !== 1 ? "s" : ""}</>)}
           </Button>
         </div>
       </motion.div>
@@ -166,32 +224,36 @@ export default function RunAllPage() {
 
       {/* Per-module results */}
       <div className="space-y-3">
-        {moduleResults.map((mr, i) => {
+        {moduleResults.filter((mr) => mr.status !== "skipped").map((mr, i) => {
           const mod = MODULES.find((m) => m.slug === mr.slug)!;
           const Icon = iconMap[mod.icon] || FlaskConical;
 
           return (
             <motion.div key={mr.slug} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <div className={`glass rounded-2xl p-4 transition-all ${mr.status === "running" ? "ring-1 ring-violet-500/30 animate-pulse" : ""}`}>
+              <div className={cn("glass rounded-2xl p-4 transition-all", mr.status === "running" && "ring-1 ring-violet-500/30 animate-pulse")}>
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all ${
+                  <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all",
                     mr.status === "done" && mr.result?.passed ? "bg-emerald-500/10 text-emerald-400" :
                     mr.status === "done" && !mr.result?.passed ? "bg-red-500/10 text-red-400" :
                     mr.status === "running" ? "bg-violet-500/20 text-violet-400" :
                     mr.status === "error" ? "bg-red-500/10 text-red-400" :
                     "bg-muted/50 text-muted-foreground"
-                  }`}>
+                  )}>
                     {mr.status === "running" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Icon className="h-5 w-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold">{mod.name}</p>
                     {mr.status === "done" && mr.result && (
                       <div className="mt-1 flex flex-wrap gap-2">
-                        {mod.metricDefinitions.map((def) => (
-                          <span key={def.key} className="text-xs text-muted-foreground">
-                            {def.label}: <span className="font-mono font-semibold text-foreground">{(mr.result!.metrics[def.key] ?? 0).toFixed(1)}{def.unit}</span>
-                          </span>
-                        ))}
+                        {mod.metricDefinitions.map((def) => {
+                          const val = mr.result!.metrics[def.key] ?? 0;
+                          const display = def.unit === "%" ? Math.min(Math.max(val, 0), 100).toFixed(1) : val.toFixed(1);
+                          return (
+                            <span key={def.key} className="text-xs text-muted-foreground">
+                              {def.label}: <span className="font-mono font-semibold text-foreground">{display}{def.unit}</span>
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                     {mr.status === "error" && <p className="text-xs text-red-400 mt-1">{mr.error}</p>}

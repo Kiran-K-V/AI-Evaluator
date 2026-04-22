@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Swords, Loader2, Trophy, Crown,
+  Swords, Loader2, Trophy, Crown, Check,
   Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,8 @@ interface ArenaResult {
   slug: ModuleSlug;
   modelA: EvaluationResult | null;
   modelB: EvaluationResult | null;
-  statusA: "pending" | "running" | "done" | "error";
-  statusB: "pending" | "running" | "done" | "error";
+  statusA: "pending" | "running" | "done" | "error" | "skipped";
+  statusB: "pending" | "running" | "done" | "error" | "skipped";
 }
 
 export default function ArenaPage() {
@@ -35,6 +35,9 @@ export default function ArenaPage() {
   const [running, setRunning] = useState(false);
   const [currentInfo, setCurrentInfo] = useState("");
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [enabledModules, setEnabledModules] = useState<Record<string, boolean>>(
+    Object.fromEntries(MODULES.map((m) => [m.slug, true]))
+  );
   const [results, setResults] = useState<ArenaResult[]>(
     MODULES.map((m) => ({ slug: m.slug, modelA: null, modelB: null, statusA: "pending", statusB: "pending" }))
   );
@@ -48,18 +51,36 @@ export default function ArenaPage() {
     });
   }, []);
 
+  const toggleModule = (slug: string) => {
+    setEnabledModules((prev) => ({ ...prev, [slug]: !prev[slug] }));
+  };
+
+  const toggleAll = () => {
+    const allEnabled = MODULES.every((m) => enabledModules[m.slug]);
+    setEnabledModules(Object.fromEntries(MODULES.map((m) => [m.slug, !allEnabled])));
+  };
+
+  const selectedModules = MODULES.filter((m) => enabledModules[m.slug]);
+
   const handleRunArena = async () => {
     if (!modelA.apiKey || !modelB.apiKey) { toast.error("Both models need API keys"); return; }
+    if (selectedModules.length === 0) { toast.error("Select at least one module"); return; }
 
     setRunning(true);
-    const updated: ArenaResult[] = MODULES.map((m) => ({ slug: m.slug, modelA: null, modelB: null, statusA: "pending", statusB: "pending" }));
+    const updated: ArenaResult[] = MODULES.map((m) => ({
+      slug: m.slug,
+      modelA: null,
+      modelB: null,
+      statusA: enabledModules[m.slug] ? "pending" as const : "skipped" as const,
+      statusB: enabledModules[m.slug] ? "pending" as const : "skipped" as const,
+    }));
     setResults(updated);
 
     for (let i = 0; i < MODULES.length; i++) {
       const mod = MODULES[i];
+      if (!enabledModules[mod.slug]) continue;
       const cases = mod.sampleInput as unknown[];
 
-      // Model A
       setCurrentInfo(`${mod.name} — ${modelA.name}`);
       updated[i] = { ...updated[i], statusA: "running" };
       setResults([...updated]);
@@ -69,7 +90,6 @@ export default function ArenaPage() {
       } catch { updated[i] = { ...updated[i], statusA: "error" }; }
       setResults([...updated]);
 
-      // Model B
       setCurrentInfo(`${mod.name} — ${modelB.name}`);
       updated[i] = { ...updated[i], statusB: "running" };
       setResults([...updated]);
@@ -141,9 +161,47 @@ export default function ArenaPage() {
             </div>
           </div>
 
+          {/* Module selection */}
           <div className="mt-5">
-            <Button onClick={handleRunArena} disabled={running || !modelA.apiKey || !modelB.apiKey} className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow">
-              {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Battle in progress...</>) : (<><Swords className="mr-2 h-4 w-4" />Start Arena Battle</>)}
+            <div className="mb-2 flex items-center justify-between">
+              <Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Modules to Compare</Label>
+              <button onClick={toggleAll} className="text-[10px] font-semibold text-orange-400 hover:text-orange-300 transition-colors">
+                {MODULES.every((m) => enabledModules[m.slug]) ? "Deselect All" : "Select All"}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-5">
+              {MODULES.map((mod) => {
+                const Icon = iconMap[mod.icon] || FlaskConical;
+                const enabled = enabledModules[mod.slug];
+                return (
+                  <button
+                    key={mod.slug}
+                    onClick={() => toggleModule(mod.slug)}
+                    disabled={running}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition-all",
+                      enabled
+                        ? "glass ring-1 ring-orange-500/30 text-foreground"
+                        : "glass-subtle text-muted-foreground opacity-50"
+                    )}
+                  >
+                    <div className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded border transition-colors",
+                      enabled ? "border-orange-500 bg-orange-500 text-white" : "border-muted-foreground/30"
+                    )}>
+                      {enabled && <Check className="h-2.5 w-2.5" />}
+                    </div>
+                    <Icon className="h-3.5 w-3.5" />
+                    {mod.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <Button onClick={handleRunArena} disabled={running || !modelA.apiKey || !modelB.apiKey || selectedModules.length === 0} className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow">
+              {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Battle in progress...</>) : (<><Swords className="mr-2 h-4 w-4" />Start Arena ({selectedModules.length} Modules)</>)}
             </Button>
           </div>
         </div>
@@ -184,7 +242,7 @@ export default function ArenaPage() {
 
       {/* Per-module comparison */}
       <div className="space-y-3">
-        {results.map((r, i) => {
+        {results.filter((r) => r.statusA !== "skipped").map((r, i) => {
           const mod = MODULES.find((m) => m.slug === r.slug)!;
           const Icon = iconMap[mod.icon] || FlaskConical;
 
@@ -208,8 +266,10 @@ export default function ArenaPage() {
                 {isDone && (
                   <div className="grid grid-cols-2 gap-3">
                     {mod.metricDefinitions.map((def) => {
-                      const valA = r.modelA?.metrics[def.key] ?? 0;
-                      const valB = r.modelB?.metrics[def.key] ?? 0;
+                      const rawA = r.modelA?.metrics[def.key] ?? 0;
+                      const rawB = r.modelB?.metrics[def.key] ?? 0;
+                      const valA = def.unit === "%" ? Math.min(Math.max(rawA, 0), 100) : rawA;
+                      const valB = def.unit === "%" ? Math.min(Math.max(rawB, 0), 100) : rawB;
                       const aWins = def.higherIsBetter ? valA > valB : valA < valB;
                       const bWins = def.higherIsBetter ? valB > valA : valB < valA;
                       const tied = Math.abs(valA - valB) < 0.5;
@@ -232,7 +292,6 @@ export default function ArenaPage() {
                               <div className="h-2 w-2 rounded-full bg-orange-500" />
                             </div>
                           </div>
-                          {/* Bar visualization */}
                           <div className="mt-2 flex h-1.5 rounded-full overflow-hidden bg-muted/30">
                             <div className="bg-violet-500 transition-all" style={{ width: `${valA + valB > 0 ? (valA / (valA + valB)) * 100 : 50}%` }} />
                             <div className="bg-orange-500 transition-all flex-1" />
