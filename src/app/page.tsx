@@ -1,65 +1,191 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { format } from "date-fns";
+import {
+  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge,
+  ArrowRight, FlaskConical, TrendingUp, TrendingDown, Activity,
+  Zap, Swords,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AnimatedCounter } from "@/components/metrics/animated-counter";
+import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
+import { getRuns } from "@/lib/storage";
+import { MODULES } from "@/lib/modules";
+import type { EvaluationRun } from "@/lib/types";
+
+const iconMap: Record<string, React.ElementType> = {
+  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge,
+};
+
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+
+export default function DashboardPage() {
+  const [runs, setRuns] = useState<EvaluationRun[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const data = getRuns();
+    requestAnimationFrame(() => { setRuns(data); setMounted(true); });
+  }, []);
+
+  if (!mounted) return null;
+
+  const totalRuns = runs.length;
+  const passedRuns = runs.filter((r) => r.passed).length;
+  const failedRuns = runs.filter((r) => !r.passed).length;
+  const avgScore = runs.length > 0
+    ? runs.reduce((sum, r) => {
+        const vals = Object.values(r.metrics);
+        return sum + (vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0);
+      }, 0) / runs.length
+    : 0;
+
+  const recentRuns = runs.slice(0, 8);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto max-w-7xl space-y-8">
+      {/* Overview Cards */}
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Total Runs", value: totalRuns, icon: Activity, gradient: "from-violet-500 to-purple-600", decimals: 0 },
+          { label: "Passed", value: passedRuns, icon: TrendingUp, gradient: "from-emerald-500 to-teal-600", decimals: 0 },
+          { label: "Failed", value: failedRuns, icon: TrendingDown, gradient: "from-red-500 to-rose-600", decimals: 0 },
+          { label: "Avg Score", value: avgScore, icon: FlaskConical, gradient: "from-amber-500 to-orange-600", decimals: 1, suffix: "%" },
+        ].map((card) => (
+          <motion.div key={card.label} variants={fadeUp}>
+            <div className="group glass rounded-2xl p-5 transition-all neu-hover">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{card.label}</p>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-lg`}>
+                  <card.icon className="h-4 w-4 text-white" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <AnimatedCounter value={card.value} decimals={card.decimals} suffix={card.suffix} className="text-3xl font-bold tracking-tight" />
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Quick Actions */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Link href="/run-all">
+          <div className="group glass rounded-2xl p-5 transition-all neu-hover cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold">Run All Modules</h3>
+                <p className="text-sm text-muted-foreground">Execute all 7 benchmarks at once with aggregated results</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+        </Link>
+        <Link href="/arena">
+          <div className="group glass rounded-2xl p-5 transition-all neu-hover cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-500/25">
+                <Swords className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold">Model Arena</h3>
+                <p className="text-sm text-muted-foreground">Compare two models head-to-head across all metrics</p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+
+      {/* Module Quick Launch */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}>
+        <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">Evaluation Modules</h2>
+        <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {MODULES.map((mod) => {
+            const Icon = iconMap[mod.icon] || FlaskConical;
+            const moduleRuns = runs.filter((r) => r.module === mod.slug);
+            const modulePassed = moduleRuns.filter((r) => r.passed).length;
+            return (
+              <motion.div key={mod.slug} variants={fadeUp}>
+                <Link href={`/evaluate/${mod.slug}`}>
+                  <div className="group glass h-full rounded-2xl p-5 transition-all neu-hover cursor-pointer">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 text-violet-400 transition-all group-hover:from-violet-500 group-hover:to-purple-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-violet-500/25">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{mod.name}</h3>
+                        {moduleRuns.length > 0 && (
+                          <p className="text-xs text-muted-foreground">{modulePassed}/{moduleRuns.length} passed</p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="mb-4 flex-1 text-sm leading-relaxed text-muted-foreground">{mod.description}</p>
+                    <div className="flex items-center text-sm font-semibold text-violet-400">
+                      Run Evaluation <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </motion.div>
+
+      {/* Recent Runs */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.4 }}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">Recent Evaluations</h2>
+          {runs.length > 0 && (
+            <Link href="/results">
+              <Button variant="ghost" size="sm" className="text-violet-400 hover:text-violet-300">
+                View All <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </Link>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {recentRuns.length === 0 ? (
+          <div className="glass rounded-2xl border-dashed p-12 text-center">
+            <FlaskConical className="mx-auto mb-4 h-12 w-12 text-muted-foreground/20" />
+            <p className="text-lg font-semibold text-muted-foreground">No evaluations yet</p>
+            <p className="mt-1 text-sm text-muted-foreground/60">Select a module above to run your first evaluation</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentRuns.map((run, i) => {
+              const mod = MODULES.find((m) => m.slug === run.module);
+              const Icon = mod ? iconMap[mod.icon] || FlaskConical : FlaskConical;
+              return (
+                <motion.div key={run.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.03 * i }}>
+                  <Link href={`/results/${run.id}`}>
+                    <div className="glass group flex cursor-pointer items-center gap-4 rounded-2xl p-4 transition-all hover:ring-1 hover:ring-violet-500/30">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">{mod?.name ?? run.module}</p>
+                        <p className="text-xs text-muted-foreground">{format(new Date(run.timestamp), "MMM d, yyyy 'at' h:mm a")}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="hidden text-xs text-muted-foreground sm:block">{run.cases.length} cases</span>
+                        <PassFailBadge passed={run.passed} />
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 }
