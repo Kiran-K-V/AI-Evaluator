@@ -71,12 +71,13 @@ export default function EvaluateModulePage({ params }: { params: Promise<{ modul
     <div className="mx-auto max-w-6xl space-y-6">
       <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-muted-foreground">{mod.description}</motion.p>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Test cases + progress in a compact top row */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
           <EvalForm sampleInput={mod.sampleInput} onRun={handleRun} running={running} />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="space-y-4">
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="flex flex-col justify-center">
           {running && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="glass rounded-2xl ring-1 ring-orange-500/20 p-4">
@@ -85,14 +86,8 @@ export default function EvaluateModulePage({ params }: { params: Promise<{ modul
             </motion.div>
           )}
 
-          {result && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-              <ResultsPanel metrics={result.metrics} cases={result.results} passed={result.passed} metricDefinitions={mod.metricDefinitions} />
-            </motion.div>
-          )}
-
           {!running && !result && (
-            <div className="glass rounded-2xl border-dashed p-16 text-center">
+            <div className="glass rounded-2xl border-dashed p-12 text-center">
               <FlaskConical className="mx-auto mb-4 h-12 w-12 text-muted-foreground/20" />
               <p className="text-lg font-semibold text-muted-foreground">No results yet</p>
               <p className="mt-1 text-sm text-muted-foreground/60">Click &quot;Run Evaluation&quot; to get started</p>
@@ -100,6 +95,13 @@ export default function EvaluateModulePage({ params }: { params: Promise<{ modul
           )}
         </motion.div>
       </div>
+
+      {/* Results span full width below */}
+      {result && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+          <ResultsPanel metrics={result.metrics} cases={result.results} passed={result.passed} metricDefinitions={mod.metricDefinitions} />
+        </motion.div>
+      )}
     </div>
   );
 }
