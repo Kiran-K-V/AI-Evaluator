@@ -119,7 +119,9 @@ export function saveModelConfig(config: ModelConfig): void {
 
 export function isConfigured(): boolean {
   const config = getModelConfig();
-  return config.apiKey.length > 0 && config.model.length > 0 && config.baseUrl.length > 0;
+  const isLocal = config.baseUrl.includes("localhost") || config.baseUrl.includes("127.0.0.1") || config.baseUrl.includes("0.0.0.0");
+  const hasAuth = isLocal || config.apiKey.length > 0;
+  return hasAuth && config.model.length > 0 && config.baseUrl.length > 0;
 }
 
 export function getActiveModelName(): string {

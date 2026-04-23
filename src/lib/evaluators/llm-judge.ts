@@ -19,7 +19,8 @@ export async function llmJudge(
   userPrompt: string
 ): Promise<JudgeVerdict> {
   const judgeConfig = getJudgeConfig();
-  const configToUse = judgeConfig.apiKey ? judgeConfig : _config;
+  const hasJudge = judgeConfig.model && judgeConfig.baseUrl;
+  const configToUse = hasJudge ? judgeConfig : _config;
 
   const response = await callModel({
     messages: [

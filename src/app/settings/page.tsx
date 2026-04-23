@@ -22,7 +22,7 @@ const PROVIDERS = [
   { name: "Together AI", url: "https://api.together.xyz/v1", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "mistralai/Mixtral-8x7B-Instruct-v0.1", "deepseek-ai/DeepSeek-R1"] },
   { name: "OpenRouter", url: "https://openrouter.ai/api/v1", models: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "google/gemini-2.0-flash-001", "deepseek/deepseek-r1"] },
   { name: "Fireworks", url: "https://api.fireworks.ai/inference/v1", models: ["accounts/fireworks/models/llama-v3p3-70b-instruct"] },
-  { name: "Local (Ollama)", url: "http://localhost:11434/v1", models: ["llama3.1", "mistral", "deepseek-r1:8b", "codellama"] },
+  { name: "Local (Ollama)", url: "http://localhost:11434/v1", models: ["gemma3:4b", "llama3.1", "mistral", "deepseek-r1:8b", "codellama"] },
 ];
 
 function generateId(): string {
@@ -57,9 +57,15 @@ export default function SettingsPage() {
     saveAppConfig(updated);
   }, []);
 
+  const isLocalProvider = newBaseUrl.includes("localhost") || newBaseUrl.includes("127.0.0.1") || newBaseUrl.includes("0.0.0.0");
+
   const handleAddModel = () => {
-    if (!newModel.trim() || !newApiKey.trim()) {
-      toast.error("Model name and API key are required");
+    if (!newModel.trim()) {
+      toast.error("Model ID is required");
+      return;
+    }
+    if (!isLocalProvider && !newApiKey.trim()) {
+      toast.error("API key is required for remote providers");
       return;
     }
     const entry: ModelEntry = {
@@ -355,9 +361,15 @@ export default function SettingsPage() {
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">API Key</Label>
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                              API Key
+                              {(entry.baseUrl.includes("localhost") || entry.baseUrl.includes("127.0.0.1")) && (
+                                <span className="ml-1 text-muted-foreground/50 normal-case tracking-normal">(optional for local models)</span>
+                              )}
+                            </Label>
                             <Input
                               type="password"
+                              placeholder={(entry.baseUrl.includes("localhost") || entry.baseUrl.includes("127.0.0.1")) ? "Not required for local models" : "sk-..."}
                               value={entry.apiKey}
                               onChange={(e) => handleUpdateModel(entry.id, { apiKey: e.target.value })}
                               className="glass rounded-lg h-9 text-sm font-mono"
@@ -466,10 +478,11 @@ export default function SettingsPage() {
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       <Key className="inline h-2.5 w-2.5 mr-1" />API Key
+                      {isLocalProvider && <span className="ml-1 text-muted-foreground/50 normal-case tracking-normal">(optional for local models)</span>}
                     </Label>
                     <Input
                       type="password"
-                      placeholder="sk-..."
+                      placeholder={isLocalProvider ? "Not required for local models" : "sk-..."}
                       value={newApiKey}
                       onChange={(e) => setNewApiKey(e.target.value)}
                       className="glass rounded-lg h-9 text-sm font-mono"
@@ -488,13 +501,43 @@ export default function SettingsPage() {
                     />
                   </div>
 
+                  {/* Ollama setup hint */}
+                  {isLocalProvider && (
+                    <div className="rounded-lg bg-amber-500/5 ring-1 ring-amber-500/20 p-3 text-xs text-muted-foreground leading-relaxed space-y-1.5">
+                      <p className="font-semibold text-amber-400">Local Model Setup</p>
+                      <p>1. Start Ollama: <code className="rounded bg-accent/30 px-1 py-0.5 font-mono text-[10px]">OLLAMA_ORIGINS=* ollama serve</code></p>
+                      <p>2. Pull your model: <code className="rounded bg-accent/30 px-1 py-0.5 font-mono text-[10px]">ollama pull gemma3:4b</code></p>
+                      <p>3. No API key needed — leave it blank.</p>
+                      <p className="text-muted-foreground/60">The <code className="font-mono text-[10px]">OLLAMA_ORIGINS=*</code> flag allows browser connections. Alternatively, this app routes local requests through a server-side proxy to bypass CORS.</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-2 pt-1">
                     <Button
                       onClick={handleAddModel}
-                      disabled={!newModel.trim() || !newApiKey.trim()}
+                      disabled={!newModel.trim() || (!isLocalProvider && !newApiKey.trim())}
                       className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/20 h-9 text-sm"
                     >
                       <Plus className="mr-1.5 h-3.5 w-3.5" />Add Model
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={!newModel.trim() || !newBaseUrl.trim() || testingId === "new"}
+                      onClick={async () => {
+                        setTestingId("new");
+                        try {
+                          const ok = await testConnection({ apiKey: newApiKey, model: newModel, baseUrl: newBaseUrl });
+                          if (ok) toast.success("Connection successful — ready to add!");
+                          else toast.error("Connection failed. Check the settings.");
+                        } catch { toast.error("Connection failed."); }
+                        finally { setTestingId(null); }
+                      }}
+                      className="rounded-lg glass-subtle h-9 text-sm"
+                    >
+                      {testingId === "new"
+                        ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Testing...</>
+                        : <><Wifi className="mr-1.5 h-3.5 w-3.5" />Test Connection</>
+                      }
                     </Button>
                     <Button variant="outline" onClick={resetForm} className="rounded-lg glass-subtle h-9 text-sm">
                       Cancel

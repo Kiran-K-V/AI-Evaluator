@@ -12,6 +12,15 @@ interface CallModelOptions {
   responseFormat?: { type: string };
 }
 
+function isLocalUrl(url: string): boolean {
+  return (
+    url.includes("localhost") ||
+    url.includes("127.0.0.1") ||
+    url.includes("0.0.0.0") ||
+    url.includes("host.docker.internal")
+  );
+}
+
 export async function callModel(options: CallModelOptions): Promise<ApiResponse> {
   const { messages, config, tools, responseFormat } = options;
 
@@ -29,14 +38,26 @@ export async function callModel(options: CallModelOptions): Promise<ApiResponse>
     body.response_format = responseFormat;
   }
 
+  const targetUrl = `${config.baseUrl}/chat/completions`;
+  const useProxy = isLocalUrl(config.baseUrl);
+
+  const fetchUrl = useProxy
+    ? `/api/proxy?url=${encodeURIComponent(targetUrl)}`
+    : targetUrl;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (config.apiKey) {
+    headers["Authorization"] = `Bearer ${config.apiKey}`;
+  }
+
   const start = performance.now();
 
-  const res = await fetch(`${config.baseUrl}/chat/completions`, {
+  const res = await fetch(fetchUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.apiKey}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
