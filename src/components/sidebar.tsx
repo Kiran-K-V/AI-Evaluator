@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 
 const moduleLinks = [
   { slug: "tool-calling", label: "Tool Calling", icon: Wrench },
-  { slug: "contextual-intelligence", label: "Contextual Intel", icon: Microscope },
+  { slug: "contextual-intelligence", label: "Context Eval", icon: Microscope },
   { slug: "safety", label: "Safety & Toxicity", icon: Shield },
   { slug: "structured-output", label: "Structured Output", icon: Braces },
   { slug: "classification", label: "Classification", icon: Tags },

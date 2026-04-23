@@ -81,11 +81,11 @@ export const MODULES: ModuleInfo[] = [
   },
   {
     slug: "contextual-intelligence",
-    name: "Contextual Intelligence",
-    description: "Unified evaluation of grounding, faithfulness, hallucination detection, context utilization, and answer relevancy — combining RAG, hallucination, and deep-eval metrics into a single comprehensive module.",
+    name: "Context Eval",
+    description: "Test whether your model stays grounded in provided context, avoids hallucination, and correctly refuses when information is missing.",
     icon: "Microscope",
     sampleInput: [
-      // --- Hallucination-style cases (no/weak context) ---
+      // --- Hallucination / Refusal cases (no/weak context) ---
       {
         question: "What was Stripe's customer churn rate in Q2 2024 according to their internal metrics report?",
         context: "",
@@ -134,14 +134,11 @@ export const MODULES: ModuleInfo[] = [
     ],
     metricDefinitions: [
       { key: "groundingAccuracy", label: "Grounding Accuracy", unit: "%", passThreshold: 75, higherIsBetter: true },
-      { key: "hallucinationRate", label: "Hallucination Rate", unit: "%", passThreshold: 25, higherIsBetter: false },
-      { key: "correctRefusalRate", label: "Correct Refusal Rate", unit: "%", passThreshold: 75, higherIsBetter: true },
       { key: "avgFaithfulness", label: "Faithfulness", unit: "%", passThreshold: 70, higherIsBetter: true },
       { key: "answerRelevancy", label: "Answer Relevancy", unit: "%", passThreshold: 70, higherIsBetter: true },
-      { key: "contextUtilization", label: "Context Utilization", unit: "%", passThreshold: 60, higherIsBetter: true },
-      { key: "contextualRecall", label: "Contextual Recall", unit: "%", passThreshold: 60, higherIsBetter: true },
-      { key: "contextualPrecision", label: "Contextual Precision", unit: "%", passThreshold: 60, higherIsBetter: true },
       { key: "overallScore", label: "Overall Score", unit: "%", passThreshold: 65, higherIsBetter: true },
+      { key: "correctRefusalRate", label: "Correct Refusal Rate", unit: "%", passThreshold: 75, higherIsBetter: true },
+      { key: "hallucinationRate", label: "Hallucination Rate", unit: "%", passThreshold: 25, higherIsBetter: false },
     ],
   },
   {

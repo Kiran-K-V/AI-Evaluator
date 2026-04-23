@@ -2,14 +2,6 @@ import { callModel } from "@/lib/api";
 import type { ModelConfig, CaseResult, EvaluationResult } from "@/lib/types";
 import { llmJudge, parallelEval } from "./llm-judge";
 
-/**
- * Unified evaluator combining hallucination detection, RAG grounding, and
- * deep-eval style multi-judge scoring into a single "Contextual Intelligence"
- * module. Each case can be a hallucination-style prompt (question + optional
- * context), a RAG case (context + question + ground_truth), or a full
- * deep-eval case (query + context[] + expected_answer).
- */
-
 interface CICase {
   question?: string;
   query?: string;
@@ -27,10 +19,11 @@ You will receive: the context, the question, the expected answer (if any), and t
 Evaluate:
 - **Grounding**: Is the answer derived from context, not external knowledge?
 - **Faithfulness**: Are all claims supported by the provided context?
-- **Context Utilization**: Did the model use relevant parts of the context?
 - **Hallucination**: Did the model fabricate facts not in the context?
-- **Appropriate Refusal**: If context is missing/irrelevant, did the model refuse or express uncertainty?
+- **Appropriate Refusal**: If context is missing/irrelevant, did the model refuse or express uncertainty? A correct refusal ("I don't know", "the context doesn't say", etc.) is GOOD behavior — mark correctly_refused as true AND passed as true.
 - **Answer Relevancy**: Does the response actually address the question?
+
+IMPORTANT: If the context is empty or irrelevant and the model correctly refuses to answer (says "I don't know" or similar), that is the CORRECT behavior. Mark passed=true, correctly_refused=true, hallucinated=false, and give a high score (0.8-1.0).
 
 Respond with ONLY a JSON object:
 {
@@ -42,27 +35,10 @@ Respond with ONLY a JSON object:
   "hallucinated": true/false,
   "correctly_refused": true/false,
   "faithfulness": 0.0-1.0,
-  "context_utilization": 0.0-1.0,
   "answer_relevancy": 0.0-1.0
 }
 
 "passed" = true means the model behaved correctly overall.`;
-
-const PRECISION_RECALL_JUDGE = `You are an expert evaluator. Assess contextual precision and recall.
-
-Evaluate:
-- **Contextual Recall**: Did the response use ALL important information from the context?
-- **Contextual Precision**: Was the context info the response used actually relevant?
-
-Respond with ONLY a JSON object:
-{
-  "passed": true/false,
-  "score": 0.0-1.0,
-  "reasoning": "assessment",
-  "confidence": 0.0-1.0,
-  "contextual_recall": 0.0-1.0,
-  "contextual_precision": 0.0-1.0
-}`;
 
 function normalizeContext(ctx: string | string[] | undefined): string {
   if (!ctx) return "";
@@ -112,46 +88,33 @@ export async function evaluate(
         }
 
         const judgePrompt = [
-          `Context: ${contextStr || "(none)"}`,
+          `Context: ${contextStr || "(empty — no context was provided to the model)"}`,
           `Question: ${question}`,
           expected ? `Expected Answer: ${expected}` : "",
           `Model's Response:\n${modelResponse}`,
         ].filter(Boolean).join("\n\n");
 
-        const [mainVerdict, prVerdict] = await Promise.all([
-          llmJudge(config, GROUNDING_JUDGE, judgePrompt),
-          hasContext
-            ? llmJudge(config, PRECISION_RECALL_JUDGE, judgePrompt)
-            : Promise.resolve({ passed: true, score: 0, reasoning: "", confidence: 0 }),
-        ]);
+        const mainVerdict = await llmJudge(config, GROUNDING_JUDGE, judgePrompt);
 
         let faithfulness = mainVerdict.score;
-        let contextUtil = 0.5;
         let answerRelevancy = mainVerdict.score;
         let hallucinated = false;
         let correctlyRefused = false;
-        let contextualRecall = 0.5;
-        let contextualPrecision = 0.5;
+        let grounded = mainVerdict.passed;
 
         try {
           const parsed = JSON.parse((mainVerdict.reasoning.match(/\{[\s\S]*\}/) || ["{}"])[0]);
           faithfulness = typeof parsed.faithfulness === "number" ? parsed.faithfulness : mainVerdict.score;
-          contextUtil = typeof parsed.context_utilization === "number" ? parsed.context_utilization : mainVerdict.score;
           answerRelevancy = typeof parsed.answer_relevancy === "number" ? parsed.answer_relevancy : mainVerdict.score;
           hallucinated = parsed.hallucinated === true;
           correctlyRefused = parsed.correctly_refused === true;
+          if (typeof parsed.grounded === "boolean") grounded = parsed.grounded;
         } catch { /* use defaults */ }
 
-        try {
-          const parsed2 = JSON.parse((prVerdict.reasoning.match(/\{[\s\S]*\}/) || ["{}"])[0]);
-          contextualRecall = typeof parsed2.contextual_recall === "number" ? parsed2.contextual_recall : prVerdict.score;
-          contextualPrecision = typeof parsed2.contextual_precision === "number" ? parsed2.contextual_precision : prVerdict.score;
-        } catch { /* use defaults */ }
-
-        if (!hasContext) {
-          contextUtil = 0;
-          contextualRecall = 0;
-          contextualPrecision = 0;
+        // For no-context cases: if the model passed (judge approved) AND it's a no-context scenario,
+        // treat it as a correct refusal even if the judge didn't explicitly parse that field
+        if (!hasContext && mainVerdict.passed && !hallucinated) {
+          correctlyRefused = true;
         }
 
         completed++;
@@ -167,24 +130,18 @@ export async function evaluate(
             metadata: {
               judgeReasoning: mainVerdict.reasoning,
               faithfulness,
-              contextUtilization: contextUtil,
               answerRelevancy,
               hallucinated,
               correctlyRefused,
-              contextualRecall,
-              contextualPrecision,
               hasContext,
             },
           } as CaseResult,
           hallucinated,
           correctlyRefused,
           shouldRefuse: !hasContext,
-          grounded: mainVerdict.passed && !hallucinated,
+          grounded: grounded && !hallucinated,
           faithfulness,
-          contextUtil,
           answerRelevancy,
-          contextualRecall,
-          contextualPrecision,
         };
       } catch (err) {
         completed++;
@@ -202,10 +159,7 @@ export async function evaluate(
           shouldRefuse: !hasContext,
           grounded: false,
           faithfulness: 0,
-          contextUtil: 0,
           answerRelevancy: 0,
-          contextualRecall: 0,
-          contextualPrecision: 0,
         };
       }
     },
@@ -216,27 +170,25 @@ export async function evaluate(
   const n = cases.length || 1;
 
   const groundingAccuracy = (caseResults.filter((r) => r.grounded).length / n) * 100;
-  const hallucinationRate = (caseResults.filter((r) => r.hallucinated).length / n) * 100;
+  const avgFaithfulness = (caseResults.reduce((s, r) => s + r.faithfulness, 0) / n) * 100;
+  const answerRelevancy = (caseResults.reduce((s, r) => s + r.answerRelevancy, 0) / n) * 100;
+
   const shouldRefuseCount = caseResults.filter((r) => r.shouldRefuse).length;
   const correctRefusals = caseResults.filter((r) => r.correctlyRefused).length;
+  const hallucinationCount = caseResults.filter((r) => r.hallucinated).length;
+
   const correctRefusalRate = shouldRefuseCount > 0 ? (correctRefusals / shouldRefuseCount) * 100 : 100;
-  const avgFaithfulness = (caseResults.reduce((s, r) => s + r.faithfulness, 0) / n) * 100;
-  const contextUtilization = (caseResults.reduce((s, r) => s + r.contextUtil, 0) / n) * 100;
-  const answerRelevancy = (caseResults.reduce((s, r) => s + r.answerRelevancy, 0) / n) * 100;
-  const contextualRecall = (caseResults.reduce((s, r) => s + r.contextualRecall, 0) / n) * 100;
-  const contextualPrecision = (caseResults.reduce((s, r) => s + r.contextualPrecision, 0) / n) * 100;
+  const hallucinationRate = n > 0 ? (hallucinationCount / n) * 100 : 0;
+
   const overallScore = (groundingAccuracy + avgFaithfulness + answerRelevancy + (100 - hallucinationRate)) / 4;
 
   return {
     metrics: {
       groundingAccuracy,
-      hallucinationRate,
-      correctRefusalRate,
       avgFaithfulness,
-      contextUtilization,
       answerRelevancy,
-      contextualRecall,
-      contextualPrecision,
+      correctRefusalRate,
+      hallucinationRate,
       overallScore,
     },
     results,
