@@ -11,7 +11,7 @@ import { EvalProgressBar } from "@/components/evaluation/progress-bar";
 import { ResultsPanel } from "@/components/evaluation/results-panel";
 import { getModule } from "@/lib/modules";
 import { getModelConfig } from "@/lib/settings";
-import { saveRun } from "@/lib/storage";
+import { saveRun } from "@/lib/db";
 import { runEvaluation } from "@/lib/evaluators";
 import type { EvaluationResult, ModuleSlug } from "@/lib/types";
 
@@ -42,8 +42,10 @@ export default function EvaluateModulePage({ params }: { params: Promise<{ modul
         id: uuidv4(), module: mod.slug as ModuleSlug, timestamp: new Date().toISOString(),
         metrics: evalResult.metrics, cases: evalResult.results, passed: evalResult.passed,
         modelConfig: { model: config.model, baseUrl: config.baseUrl },
+        runType: "single" as const,
+        tags: [config.model],
       };
-      saveRun(run);
+      await saveRun(run);
       toast.success(evalResult.passed ? "Evaluation passed!" : "Evaluation completed (some checks failed).", {
         action: { label: "View Details", onClick: () => router.push(`/results/${run.id}`) },
       });

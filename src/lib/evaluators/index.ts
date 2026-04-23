@@ -13,13 +13,8 @@ export async function runEvaluation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return evaluate(cases as any, config, onProgress, systemPrompt);
     }
-    case "hallucination": {
-      const { evaluate } = await import("./hallucination");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return evaluate(cases as any, config, onProgress, systemPrompt);
-    }
-    case "rag-grounding": {
-      const { evaluate } = await import("./rag-grounding");
+    case "contextual-intelligence": {
+      const { evaluate } = await import("./contextual-intelligence");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return evaluate(cases as any, config, onProgress, systemPrompt);
     }
@@ -55,11 +50,6 @@ export async function runEvaluation(
     }
     case "summarization": {
       const { evaluate } = await import("./summarization");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return evaluate(cases as any, config, onProgress, systemPrompt);
-    }
-    case "deepeval": {
-      const { evaluate } = await import("./deepeval");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return evaluate(cases as any, config, onProgress, systemPrompt);
     }

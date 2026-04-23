@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
   Zap, Play, Loader2, Check,
-  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
+  Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,12 @@ import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import { EvalProgressBar } from "@/components/evaluation/progress-bar";
 import { MODULES } from "@/lib/modules";
 import { getModelConfig } from "@/lib/settings";
-import { saveRun } from "@/lib/storage";
+import { saveRun } from "@/lib/db";
 import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
 import { cn, getResultScore } from "@/lib/utils";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
+const iconMap: Record<string, React.ElementType> = { Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
 interface ModuleResult {
   slug: ModuleSlug;
@@ -72,6 +72,7 @@ export default function RunAllPage() {
 
     setRunning(true);
     const config = { apiKey, model, baseUrl };
+    const batchGroupId = uuidv4();
     const updatedResults: ModuleResult[] = MODULES.map((m) => ({
       slug: m.slug,
       result: null,
@@ -97,10 +98,14 @@ export default function RunAllPage() {
 
         updatedResults[i] = { slug: mod.slug, result: evalResult, status: "done" };
 
-        saveRun({
+        await saveRun({
           id: uuidv4(), module: mod.slug, timestamp: new Date().toISOString(),
           metrics: evalResult.metrics, cases: evalResult.results, passed: evalResult.passed,
           modelConfig: { model: config.model, baseUrl: config.baseUrl },
+          runType: "batch",
+          groupId: batchGroupId,
+          groupLabel: `Batch: ${config.model} (${selectedModules.length} modules)`,
+          tags: [config.model],
         });
       } catch (err) {
         updatedResults[i] = { slug: mod.slug, result: null, status: "error", error: err instanceof Error ? err.message : "Unknown error" };

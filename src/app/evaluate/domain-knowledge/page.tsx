@@ -16,7 +16,7 @@ import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import { EvalProgressBar } from "@/components/evaluation/progress-bar";
 import { getModule } from "@/lib/modules";
 import { getModelConfig, isConfigured } from "@/lib/settings";
-import { saveRun } from "@/lib/storage";
+import { saveRun } from "@/lib/db";
 import { runEvaluation } from "@/lib/evaluators";
 import type { EvaluationResult, CaseResult, MetricDefinition, ModuleSlug } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -111,8 +111,10 @@ export default function DomainKnowledgePage() {
         cases: evalResult.results,
         passed: evalResult.passed,
         modelConfig: { model: config.model, baseUrl: config.baseUrl },
+        runType: "single" as const,
+        tags: [config.model],
       };
-      saveRun(run);
+      await saveRun(run);
       toast.success(
         evalResult.passed
           ? "Domain knowledge evaluation passed!"

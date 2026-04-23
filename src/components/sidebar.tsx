@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Wrench,
-  Brain,
-  BookOpen,
   Shield,
   Braces,
   Tags,
@@ -29,15 +27,13 @@ import { cn } from "@/lib/utils";
 
 const moduleLinks = [
   { slug: "tool-calling", label: "Tool Calling", icon: Wrench },
-  { slug: "hallucination", label: "Hallucination", icon: Brain },
-  { slug: "rag-grounding", label: "RAG Grounding", icon: BookOpen },
+  { slug: "contextual-intelligence", label: "Contextual Intel", icon: Microscope },
   { slug: "safety", label: "Safety & Toxicity", icon: Shield },
   { slug: "structured-output", label: "Structured Output", icon: Braces },
   { slug: "classification", label: "Classification", icon: Tags },
   { slug: "domain-knowledge", label: "Domain Knowledge", icon: GraduationCap },
   { slug: "consistency", label: "Consistency", icon: RefreshCcw },
   { slug: "summarization", label: "Summarization", icon: FileText },
-  { slug: "deepeval", label: "DeepEval Metrics", icon: Microscope },
   { slug: "performance", label: "Performance", icon: Gauge },
 ];
 

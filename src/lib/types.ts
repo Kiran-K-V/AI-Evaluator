@@ -1,15 +1,16 @@
 export type ModuleSlug =
   | "tool-calling"
-  | "hallucination"
-  | "rag-grounding"
+  | "contextual-intelligence"
   | "safety"
   | "structured-output"
   | "classification"
   | "performance"
   | "domain-knowledge"
   | "consistency"
-  | "summarization"
-  | "deepeval";
+  | "summarization";
+
+/** Legacy slugs kept for backward-compatible storage lookups. */
+export type LegacyModuleSlug = "hallucination" | "rag-grounding" | "deepeval";
 
 export interface ModelEntry {
   id: string;
@@ -41,6 +42,8 @@ export interface CaseResult {
   metadata?: Record<string, unknown>;
 }
 
+export type RunType = "single" | "batch" | "arena";
+
 export interface EvaluationRun {
   id: string;
   module: ModuleSlug;
@@ -49,6 +52,13 @@ export interface EvaluationRun {
   cases: CaseResult[];
   passed: boolean;
   modelConfig: { model: string; baseUrl: string };
+  runType?: RunType;
+  /** Groups batch / arena runs so the results page can cluster them. */
+  groupId?: string;
+  /** Human-readable label for the group (e.g. "Arena: gpt-4o vs claude-3.5"). */
+  groupLabel?: string;
+  /** Freeform tags attached to the model (provider, size, etc.). */
+  tags?: string[];
 }
 
 export interface EvaluationResult {

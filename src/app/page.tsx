@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
-  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap,
+  Wrench, Shield, Braces, Tags, Gauge, GraduationCap,
   RefreshCcw, FileText, Microscope,
   ArrowRight, FlaskConical, TrendingUp, TrendingDown, Activity,
   Zap, Swords,
@@ -13,13 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { AnimatedCounter } from "@/components/metrics/animated-counter";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
-import { getRuns } from "@/lib/storage";
+import { getRuns } from "@/lib/db";
 import { MODULES } from "@/lib/modules";
 import { getRunScore } from "@/lib/utils";
 import type { EvaluationRun } from "@/lib/types";
 
 const iconMap: Record<string, React.ElementType> = {
-  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope,
+  Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope,
 };
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
@@ -30,8 +30,7 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const data = getRuns();
-    requestAnimationFrame(() => { setRuns(data); setMounted(true); });
+    getRuns().then((data) => { setRuns(data); setMounted(true); });
   }, []);
 
   if (!mounted) return null;
@@ -81,7 +80,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex-1">
                 <h3 className="font-bold">Run All Modules</h3>
-                <p className="text-sm text-muted-foreground">Execute all 11 benchmarks at once with aggregated results</p>
+                <p className="text-sm text-muted-foreground">Execute all {MODULES.length} benchmarks at once with aggregated results</p>
               </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
             </div>

@@ -5,18 +5,18 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import {
-  ArrowLeft, Clock, Bot, Hash, Wrench, Brain, BookOpen,
+  ArrowLeft, Clock, Bot, Hash, Wrench,
   Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import { ResultsPanel } from "@/components/evaluation/results-panel";
-import { getRunById, deleteRun } from "@/lib/storage";
+import { getRunById, deleteRun } from "@/lib/db";
 import { getModule } from "@/lib/modules";
 import type { EvaluationRun } from "@/lib/types";
 import { toast } from "sonner";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
+const iconMap: Record<string, React.ElementType> = { Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
 export default function ResultDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -25,8 +25,10 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const data = getRunById(id);
-    requestAnimationFrame(() => { setRun(data); setMounted(true); });
+    getRunById(id).then((data) => {
+      setRun(data);
+      setMounted(true);
+    });
   }, [id]);
 
   if (!mounted) return null;
@@ -49,7 +51,11 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
   const mod = getModule(run.module);
   const Icon = mod ? iconMap[mod.icon] || FlaskConical : FlaskConical;
 
-  const handleDelete = () => { deleteRun(run.id); toast.success("Run deleted"); router.push("/results"); };
+  const handleDelete = async () => {
+    await deleteRun(run.id);
+    toast.success("Run deleted");
+    router.push("/results");
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -71,6 +77,13 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
                 <span className="text-muted-foreground/30">|</span>
                 <span className="flex items-center gap-1"><Hash className="h-3 w-3" />{run.cases.length} cases</span>
               </div>
+              {run.tags && run.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {run.tags.map((tag) => (
+                    <span key={tag} className="rounded-md bg-muted/50 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

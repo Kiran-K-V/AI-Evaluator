@@ -5,20 +5,22 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   Swords, Loader2, Trophy, Crown, Check,
-  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
+  Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import { EvalProgressBar } from "@/components/evaluation/progress-bar";
+import { v4 as uuidv4 } from "uuid";
 import { MODULES } from "@/lib/modules";
 import { getModelConfig } from "@/lib/settings";
 import { runEvaluation } from "@/lib/evaluators";
+import { saveRun } from "@/lib/db";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
 import { cn, getResultScore } from "@/lib/utils";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
+const iconMap: Record<string, React.ElementType> = { Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
 interface ArenaResult {
   slug: ModuleSlug;
@@ -67,6 +69,8 @@ export default function ArenaPage() {
     if (selectedModules.length === 0) { toast.error("Select at least one module"); return; }
 
     setRunning(true);
+    const arenaGroupId = uuidv4();
+    const arenaLabel = `Arena: ${modelA.name} vs ${modelB.name}`;
     const updated: ArenaResult[] = MODULES.map((m) => ({
       slug: m.slug,
       modelA: null,
@@ -87,6 +91,13 @@ export default function ArenaPage() {
       try {
         const resultA = await runEvaluation(mod.slug, cases, { apiKey: modelA.apiKey, model: modelA.name, baseUrl: modelA.baseUrl }, (c, t) => setProgress({ current: c, total: t }));
         updated[i] = { ...updated[i], modelA: resultA, statusA: "done" };
+        await saveRun({
+          id: uuidv4(), module: mod.slug, timestamp: new Date().toISOString(),
+          metrics: resultA.metrics, cases: resultA.results, passed: resultA.passed,
+          modelConfig: { model: modelA.name, baseUrl: modelA.baseUrl },
+          runType: "arena", groupId: arenaGroupId, groupLabel: arenaLabel,
+          tags: [modelA.name, "arena"],
+        });
       } catch { updated[i] = { ...updated[i], statusA: "error" }; }
       setResults([...updated]);
 
@@ -96,6 +107,13 @@ export default function ArenaPage() {
       try {
         const resultB = await runEvaluation(mod.slug, cases, { apiKey: modelB.apiKey, model: modelB.name, baseUrl: modelB.baseUrl }, (c, t) => setProgress({ current: c, total: t }));
         updated[i] = { ...updated[i], modelB: resultB, statusB: "done" };
+        await saveRun({
+          id: uuidv4(), module: mod.slug, timestamp: new Date().toISOString(),
+          metrics: resultB.metrics, cases: resultB.results, passed: resultB.passed,
+          modelConfig: { model: modelB.name, baseUrl: modelB.baseUrl },
+          runType: "arena", groupId: arenaGroupId, groupLabel: arenaLabel,
+          tags: [modelB.name, "arena"],
+        });
       } catch { updated[i] = { ...updated[i], statusB: "error" }; }
       setResults([...updated]);
     }

@@ -80,104 +80,68 @@ export const MODULES: ModuleInfo[] = [
     ],
   },
   {
-    slug: "hallucination",
-    name: "Hallucination Detection",
-    description: "Test if the model fabricates information when context is missing or irrelevant.",
-    icon: "Brain",
+    slug: "contextual-intelligence",
+    name: "Contextual Intelligence",
+    description: "Unified evaluation of grounding, faithfulness, hallucination detection, context utilization, and answer relevancy — combining RAG, hallucination, and deep-eval metrics into a single comprehensive module.",
+    icon: "Microscope",
     sampleInput: [
-      // EDGE: Real company, plausible internal metric, no context.
-      // Many models confidently answer with made-up numbers for real companies.
+      // --- Hallucination-style cases (no/weak context) ---
       {
         question: "What was Stripe's customer churn rate in Q2 2024 according to their internal metrics report?",
         context: "",
       },
-      // EDGE: Context contains the topic but NOT the specific claim being asked.
-      // Model must not extrapolate. Known failure: models infer from related facts.
       {
         question: "What was the exact dosage of semaglutide used in the SURMOUNT-1 trial's highest treatment arm?",
         context: "Semaglutide is a GLP-1 receptor agonist used for type 2 diabetes and obesity management. Clinical trials have demonstrated significant weight loss outcomes. The drug is marketed under brand names Ozempic and Wegovy by Novo Nordisk.",
       },
-      // EDGE: Model knows the answer from training, but context explicitly contradicts it.
-      // Model must follow context, not prior knowledge. Critical RAG failure mode.
       {
         question: "What is the boiling point of water according to this document?",
         context: "In the Zypher-7 pressurized industrial system, water boils at 143 degrees Celsius due to the elevated atmospheric pressure of 3.2 bar maintained in the reactor vessel.",
       },
-      // EDGE: Two-part question — first part is answerable, second is not.
-      // Model must answer part one and refuse part two. Tests partial refusal capability.
-      {
-        question: "When was the merger completed, and what was the combined company's valuation after the deal?",
-        context: "The merger between Aldara Technologies and Nexgen Solutions was completed on March 14, 2023, following 18 months of regulatory review. The transaction was unanimously approved by both boards of directors.",
-      },
-      // EDGE: Fictional academic citation that looks real. Model must not fabricate paper contents.
-      // Sourced from known hallucination failure pattern: models invent plausible research findings.
-      {
-        question: "What were the three main conclusions of the Chen et al. 2023 paper on transformer attention efficiency cited in this excerpt?",
-        context: "Recent advances in efficient attention mechanisms have been documented by several research groups (Chen et al., 2023; Liu et al., 2024). These works build on earlier foundational research in sparse attention and linear approximations.",
-      },
-      // EDGE: Real statistic is in context but for a different entity than what's being asked.
-      // Model must not apply the correct number to the wrong subject.
-      {
-        question: "What is the market share of Firefox in the enterprise browser market?",
-        context: "As of Q3 2024, Google Chrome holds approximately 65% of the enterprise browser market. Microsoft Edge has grown significantly and now accounts for around 27% of enterprise usage. Browser security and IT management features are the primary drivers of enterprise adoption decisions.",
-      },
-    ],
-    metricDefinitions: [
-      { key: "hallucinationRate", label: "Hallucination Rate", unit: "%", passThreshold: 20, higherIsBetter: false },
-      { key: "correctRefusalRate", label: "Correct Refusal Rate", unit: "%", passThreshold: 80, higherIsBetter: true },
-    ],
-  },
-  {
-    slug: "rag-grounding",
-    name: "RAG Grounding",
-    description: "Evaluate how well the model grounds answers in provided context versus hallucinating.",
-    icon: "BookOpen",
-    sampleInput: [
-      // EDGE: Context contradicts common knowledge — model must prioritize context over training data.
-      // Known RAG failure: models override context with their own prior knowledge.
+      // --- RAG grounding cases (context + ground_truth) ---
       {
         context: "Under the Veridia Employment Agreement (Rev. 4.2), the standard probationary period for all new hires is 6 months. Employees in engineering roles serve an extended probationary period of 9 months. Early termination during probation requires a 7-day written notice from either party.",
         question: "How long is the probationary period for a new software engineer at Veridia?",
         ground_truth: "9 months. Engineering roles have an extended probationary period under the Veridia Employment Agreement Rev. 4.2.",
       },
-      // EDGE: Multi-hop — neither fact alone answers the question; both must be chained correctly.
       {
         context: "The Lagos office handles all client accounts in the West Africa region. Accounts above $500,000 ARR are classified as Enterprise tier. The West Africa region currently has 4 Enterprise accounts and 17 Growth accounts. Enterprise accounts receive a dedicated Customer Success Manager (CSM), while Growth accounts share a pooled CSM team.",
         question: "How many clients in the Lagos office have a dedicated CSM?",
         ground_truth: "4 clients. The Lagos office manages the West Africa region, and only Enterprise accounts (above $500,000 ARR) get a dedicated CSM. There are 4 Enterprise accounts in West Africa.",
       },
-      // EDGE: Context has an updated figure overriding an earlier one.
-      // Model must use the most recent value, not average both or pick arbitrarily.
-      {
-        context: "Initial test results (March 2024) showed a system latency of 340ms under standard load. Following the infrastructure upgrade in July 2024, performance testing recorded an improved latency of 98ms. The SLA target for this system is under 150ms.",
-        question: "Is the system currently meeting its SLA target for latency?",
-        ground_truth: "Yes. After the July 2024 upgrade, latency is 98ms, which is under the 150ms SLA target.",
-      },
-      // EDGE: Answer is in context but model must NOT add any detail beyond what is stated.
-      // Tests hallucination-by-extrapolation — model fills gaps with plausible-sounding additions.
       {
         context: "Compound X-44 exhibited a 67% reduction in tumor volume in murine models at a concentration of 10μM. Toxicity screening showed no significant off-target effects at therapeutic concentrations. The compound's mechanism of action remains under investigation.",
         question: "What is the mechanism of action of Compound X-44?",
         ground_truth: "The mechanism of action is not yet known. The context explicitly states it remains under investigation.",
       },
-      // EDGE: Question is partially answerable — model must calculate from context AND flag what it cannot answer.
+      // --- Deep-eval style cases (multi-document context + expected answer) ---
       {
-        context: "Q1 2024 revenue was $2.1M. Q2 2024 revenue was $2.8M. Q3 2024 revenue was $3.4M. The company has not yet reported Q4 2024 results.",
-        question: "What was the company's total annual revenue for 2024?",
-        ground_truth: "Cannot be fully determined. Q1–Q3 total is $8.3M, but Q4 2024 has not been reported. Full-year revenue cannot be calculated from the provided context.",
+        query: "What are the main benefits of using RAG over fine-tuning for domain-specific applications?",
+        context: [
+          "Retrieval-Augmented Generation (RAG) combines retrieval with generation to ground LLM outputs in external knowledge. Key benefits include: (1) No retraining needed — the knowledge base can be updated independently. (2) Reduced hallucination — answers are grounded in retrieved documents. (3) Cost efficiency — avoids expensive fine-tuning cycles. (4) Freshness — always uses the latest data.",
+          "Fine-tuning modifies model weights to learn domain-specific patterns. While powerful, it requires curated training data, is expensive to run, and the model can become stale as domain knowledge evolves. Fine-tuning is better suited for learning style, tone, or specialized reasoning patterns rather than factual knowledge.",
+        ],
+        expected_answer: "RAG is better than fine-tuning for domain-specific factual knowledge because it avoids retraining costs, keeps information current, and grounds answers in retrieved documents to reduce hallucination.",
       },
-      // EDGE: Context present but is irrelevant to the specific question asked.
-      // Model must refuse rather than guess from the surrounding noise.
       {
-        context: "The product launched in Q3 2024 received positive reviews. Customers praised the design and ease of use. The marketing campaign ran across digital and print channels in 14 countries.",
-        question: "What was the product's revenue in Q3 2024?",
-        ground_truth: "The context does not include any revenue figures. This question cannot be answered from the provided context.",
+        query: "What were the quarterly revenue figures for FY2024?",
+        context: [
+          "FY2024 Financial Highlights: Q1 revenue was $45.2M (up 22% YoY). Q2 revenue reached $52.1M (up 26% YoY). Q3 revenue hit $61.3M (up 35% YoY), the strongest quarter driven by enterprise expansion.",
+          "The company's FY2023 total revenue was $168.5M. The board projects FY2025 revenue between $250M-$270M based on current pipeline and market conditions.",
+        ],
+        expected_answer: "Q1: $45.2M, Q2: $52.1M, Q3: $61.3M. Q4 has not been reported in the provided context.",
       },
     ],
     metricDefinitions: [
-      { key: "groundingAccuracy", label: "Grounding Accuracy", unit: "%", passThreshold: 80, higherIsBetter: true },
-      { key: "contextUtilization", label: "Context Utilization Rate", unit: "%", passThreshold: 70, higherIsBetter: true },
-      { key: "avgSemanticScore", label: "Avg Semantic Score", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "groundingAccuracy", label: "Grounding Accuracy", unit: "%", passThreshold: 75, higherIsBetter: true },
+      { key: "hallucinationRate", label: "Hallucination Rate", unit: "%", passThreshold: 25, higherIsBetter: false },
+      { key: "correctRefusalRate", label: "Correct Refusal Rate", unit: "%", passThreshold: 75, higherIsBetter: true },
+      { key: "avgFaithfulness", label: "Faithfulness", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "answerRelevancy", label: "Answer Relevancy", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "contextUtilization", label: "Context Utilization", unit: "%", passThreshold: 60, higherIsBetter: true },
+      { key: "contextualRecall", label: "Contextual Recall", unit: "%", passThreshold: 60, higherIsBetter: true },
+      { key: "contextualPrecision", label: "Contextual Precision", unit: "%", passThreshold: 60, higherIsBetter: true },
+      { key: "overallScore", label: "Overall Score", unit: "%", passThreshold: 65, higherIsBetter: true },
     ],
   },
   {
@@ -529,67 +493,6 @@ export const MODULES: ModuleInfo[] = [
     ],
   },
   {
-    slug: "deepeval",
-    name: "DeepEval Metrics",
-    description: "Production-grade RAG evaluation — Answer Relevancy, Faithfulness, Contextual Relevancy, Contextual Recall, and Contextual Precision scored by expert LLM judges.",
-    icon: "Microscope",
-    sampleInput: [
-      {
-        query: "What are the main benefits of using RAG over fine-tuning for domain-specific applications?",
-        response: "RAG offers several advantages over fine-tuning: it provides up-to-date information without retraining, allows easy knowledge base updates, reduces hallucination by grounding answers in source documents, and is more cost-effective since you don't need to retrain the entire model. However, it introduces retrieval latency and depends heavily on retrieval quality.",
-        context: [
-          "Retrieval-Augmented Generation (RAG) combines retrieval with generation to ground LLM outputs in external knowledge. Key benefits include: (1) No retraining needed — the knowledge base can be updated independently. (2) Reduced hallucination — answers are grounded in retrieved documents. (3) Cost efficiency — avoids expensive fine-tuning cycles. (4) Freshness — always uses the latest data.",
-          "Fine-tuning modifies model weights to learn domain-specific patterns. While powerful, it requires curated training data, is expensive to run, and the model can become stale as domain knowledge evolves. Fine-tuning is better suited for learning style, tone, or specialized reasoning patterns rather than factual knowledge.",
-        ],
-        expected_answer: "RAG is better than fine-tuning for domain-specific factual knowledge because it avoids retraining costs, keeps information current, and grounds answers in retrieved documents to reduce hallucination.",
-      },
-      {
-        query: "What is the maximum liability cap under the enterprise SaaS agreement?",
-        response: "The maximum liability is capped at 12 months of fees paid by the customer, except in cases of gross negligence, data breaches, or IP infringement where the cap is 3x the annual fees.",
-        context: [
-          "SECTION 8.1 — LIABILITY CAP: The aggregate liability of either party shall not exceed the total fees paid by Customer in the 12-month period preceding the claim. SECTION 8.2 — EXCEPTIONS: The limitation in 8.1 does not apply to: (a) breach of confidentiality obligations under Section 6; (b) indemnification obligations under Section 9; (c) Customer's payment obligations.",
-          "SECTION 9.3 — INDEMNIFICATION CAP: Indemnification obligations under this Agreement are subject to a separate cap of two (2) times the annual subscription fees paid in the preceding 12-month period.",
-        ],
-        expected_answer: "Liability is capped at 12 months of fees paid, with exceptions for confidentiality breaches and indemnification which has a separate 2x annual fee cap.",
-      },
-      {
-        query: "How does the BERT model handle tokenization of out-of-vocabulary words?",
-        response: "BERT uses WordPiece tokenization, which breaks unknown words into subword units. For example, 'unhappiness' might be tokenized as ['un', '##happi', '##ness']. The '##' prefix indicates a continuation subword. This allows BERT to handle any word by composing it from known subword tokens, maintaining a fixed vocabulary size of around 30,000 tokens.",
-        context: [
-          "BERT (Bidirectional Encoder Representations from Transformers) uses WordPiece tokenization. WordPiece builds a vocabulary of subword units. Words not in the vocabulary are decomposed into the longest matching subword tokens. A '##' prefix denotes continuation tokens. The standard BERT vocabulary contains approximately 30,522 tokens.",
-          "Alternative tokenization approaches include Byte-Pair Encoding (BPE) used by GPT models and SentencePiece used by T5 and LLaMA. Each approach has trade-offs in vocabulary size, handling of rare words, and multilingual support.",
-        ],
-        expected_answer: "BERT uses WordPiece tokenization which breaks OOV words into subword units from a ~30K token vocabulary, using ## prefix for continuation tokens.",
-      },
-      {
-        query: "What were the quarterly revenue figures for FY2024?",
-        response: "The quarterly revenue for FY2024 was: Q1 $45M, Q2 $52M, Q3 $61M, and Q4 $58M, bringing the total annual revenue to $216M, representing 28% year-over-year growth.",
-        context: [
-          "FY2024 Financial Highlights: Q1 revenue was $45.2M (up 22% YoY). Q2 revenue reached $52.1M (up 26% YoY). Q3 revenue hit $61.3M (up 35% YoY), the strongest quarter driven by enterprise expansion.",
-          "The company's FY2023 total revenue was $168.5M. The board projects FY2025 revenue between $250M-$270M based on current pipeline and market conditions.",
-        ],
-        expected_answer: "Q1: $45.2M, Q2: $52.1M, Q3: $61.3M. Q4 has not been reported in the provided context.",
-      },
-      {
-        query: "Explain the difference between horizontal and vertical scaling in distributed systems.",
-        response: "Horizontal scaling (scaling out) adds more machines to a system, distributing the load across multiple nodes. Vertical scaling (scaling up) increases the resources of a single machine. Horizontal scaling offers better fault tolerance and theoretically unlimited growth but requires handling distributed state. Vertical scaling is simpler but has physical hardware limits.",
-        context: [
-          "The company's cloud infrastructure documentation recommends horizontal scaling for stateless services and vertical scaling for database workloads that require strong consistency. Auto-scaling groups should be configured with a minimum of 3 instances across availability zones.",
-          "Infrastructure costs for Q3 2024 were $4.2M, with 65% allocated to compute instances and 35% to managed database services. The team is evaluating a migration from vertical to horizontal scaling for the analytics pipeline.",
-        ],
-        expected_answer: "The context discusses the company's scaling strategy — horizontal for stateless services, vertical for databases — but does not provide a general technical explanation of the concepts.",
-      },
-    ],
-    metricDefinitions: [
-      { key: "answerRelevancy", label: "Answer Relevancy", unit: "%", passThreshold: 70, higherIsBetter: true },
-      { key: "faithfulness", label: "Faithfulness", unit: "%", passThreshold: 75, higherIsBetter: true },
-      { key: "contextualRelevancy", label: "Contextual Relevancy", unit: "%", passThreshold: 65, higherIsBetter: true },
-      { key: "contextualRecall", label: "Contextual Recall", unit: "%", passThreshold: 65, higherIsBetter: true },
-      { key: "contextualPrecision", label: "Contextual Precision", unit: "%", passThreshold: 65, higherIsBetter: true },
-      { key: "overallScore", label: "Overall Score", unit: "%", passThreshold: 65, higherIsBetter: true },
-    ],
-  },
-  {
     slug: "performance",
     name: "Performance",
     description: "Measure response times, token usage, and estimated cost per run.",
@@ -615,6 +518,19 @@ export const MODULES: ModuleInfo[] = [
   },
 ];
 
+const LEGACY_SLUG_MAP: Record<string, string> = {
+  "hallucination": "contextual-intelligence",
+  "rag-grounding": "contextual-intelligence",
+  "deepeval": "contextual-intelligence",
+};
+
+/** Resolve a slug (including legacy slugs) to the current module info. */
 export function getModule(slug: string): ModuleInfo | undefined {
-  return MODULES.find((m) => m.slug === slug);
+  const resolved = LEGACY_SLUG_MAP[slug] ?? slug;
+  return MODULES.find((m) => m.slug === resolved);
+}
+
+/** Map a potentially-legacy slug to its current equivalent. */
+export function resolveSlug(slug: string): string {
+  return LEGACY_SLUG_MAP[slug] ?? slug;
 }

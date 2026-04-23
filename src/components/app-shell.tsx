@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "./sidebar";
 import { TopNav } from "./top-nav";
 import { ThemeProvider } from "./theme-provider";
@@ -8,9 +8,12 @@ import { PageTransition } from "./page-transition";
 import { OnboardingTour } from "./onboarding-tour";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { migrateFromLocalStorage } from "@/lib/db";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => { migrateFromLocalStorage(); }, []);
 
   return (
     <ThemeProvider>
