@@ -22,7 +22,7 @@ const PROVIDERS = [
   { name: "Together AI", url: "https://api.together.xyz/v1", models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "mistralai/Mixtral-8x7B-Instruct-v0.1", "deepseek-ai/DeepSeek-R1"] },
   { name: "OpenRouter", url: "https://openrouter.ai/api/v1", models: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "google/gemini-2.0-flash-001", "deepseek/deepseek-r1"] },
   { name: "Fireworks", url: "https://api.fireworks.ai/inference/v1", models: ["accounts/fireworks/models/llama-v3p3-70b-instruct"] },
-  { name: "Local (Ollama)", url: "http://localhost:11434/v1", models: ["gemma3:4b", "llama3.1", "mistral", "deepseek-r1:8b", "codellama"] },
+  { name: "Local (Ollama)", url: "http://localhost:11434/v1", models: ["gemma4:e2b", "llama3.1", "mistral", "deepseek-r1:8b", "codellama"] },
 ];
 
 function generateId(): string {

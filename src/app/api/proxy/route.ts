@@ -36,8 +36,14 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isConnRefused = msg.includes("ECONNREFUSED") || msg.includes("fetch failed");
     return NextResponse.json(
-      { error: `Proxy error: ${err instanceof Error ? err.message : String(err)}` },
+      {
+        error: isConnRefused
+          ? `Cannot reach ${targetUrl} — is the server running? Start with: ollama serve`
+          : `Proxy error: ${msg}`,
+      },
       { status: 502 }
     );
   }
