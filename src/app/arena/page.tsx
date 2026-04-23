@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   Swords, Loader2, Trophy, Crown, Check,
-  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, FlaskConical,
+  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
 import { cn, getResultScore } from "@/lib/utils";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge };
+const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap };
 
 interface ArenaResult {
   slug: ModuleSlug;

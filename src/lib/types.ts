@@ -5,7 +5,8 @@ export type ModuleSlug =
   | "safety"
   | "structured-output"
   | "classification"
-  | "performance";
+  | "performance"
+  | "domain-knowledge";
 
 export interface ModelConfig {
   apiKey: string;

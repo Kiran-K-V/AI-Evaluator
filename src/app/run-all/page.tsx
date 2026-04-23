@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
   Zap, Play, Loader2, Check,
-  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, FlaskConical,
+  Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
 import { cn, getResultScore } from "@/lib/utils";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge };
+const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap };
 
 interface ModuleResult {
   slug: ModuleSlug;

@@ -12,6 +12,7 @@ import {
   Braces,
   Tags,
   Gauge,
+  GraduationCap,
   History,
   Settings,
   ChevronLeft,
@@ -28,6 +29,7 @@ const moduleLinks = [
   { slug: "safety", label: "Safety & Toxicity", icon: Shield },
   { slug: "structured-output", label: "Structured Output", icon: Braces },
   { slug: "classification", label: "Classification", icon: Tags },
+  { slug: "domain-knowledge", label: "Domain Knowledge", icon: GraduationCap },
   { slug: "performance", label: "Performance", icon: Gauge },
 ];
 

@@ -1,5 +1,6 @@
 import { callModel } from "@/lib/api";
 import type { ModelConfig, CaseResult, EvaluationResult } from "@/lib/types";
+import { parallelEval } from "./llm-judge";
 
 interface PerformanceCase {
   prompt: string;
@@ -29,60 +30,72 @@ export async function evaluate(
   config: ModelConfig,
   onProgress: (completed: number, total: number) => void
 ): Promise<EvaluationResult> {
-  const results: CaseResult[] = [];
-  let totalLatency = 0;
-  let totalTokens = 0;
-  let totalCost = 0;
+  let completed = 0;
 
-  for (let i = 0; i < cases.length; i++) {
-    const tc = cases[i];
+  const caseResults = await parallelEval(
+    cases,
+    async (tc) => {
+      try {
+        const response = await callModel({
+          messages: [{ role: "user", content: tc.prompt }],
+          config,
+        });
 
-    try {
-      const response = await callModel({
-        messages: [{ role: "user", content: tc.prompt }],
-        config,
-      });
+        const latency = response.latency;
+        const tokens = response.usage.completion_tokens || 0;
+        const cost = estimateCost(
+          config.model,
+          response.usage.prompt_tokens || 0,
+          tokens
+        );
 
-      const latency = response.latency;
-      const tokens = response.usage.completion_tokens || 0;
-      const cost = estimateCost(
-        config.model,
-        response.usage.prompt_tokens || 0,
-        tokens
-      );
+        completed++;
+        onProgress(completed, cases.length);
 
-      totalLatency += latency;
-      totalTokens += tokens;
-      totalCost += cost;
-
-      results.push({
-        input: tc as unknown as Record<string, unknown>,
-        modelOutput: response.content.slice(0, 200) + (response.content.length > 200 ? "..." : ""),
-        expected: "N/A (performance test)",
-        passed: true,
-        score: 1,
-        metadata: {
-          latency: Math.round(latency),
+        return {
+          result: {
+            input: tc as unknown as Record<string, unknown>,
+            modelOutput: response.content.slice(0, 200) + (response.content.length > 200 ? "..." : ""),
+            expected: "N/A (performance test)",
+            passed: true,
+            score: 1,
+            metadata: {
+              latency: Math.round(latency),
+              tokens,
+              promptTokens: response.usage.prompt_tokens,
+              completionTokens: response.usage.completion_tokens,
+              cost: cost.toFixed(6),
+            },
+          } as CaseResult,
+          latency,
           tokens,
-          promptTokens: response.usage.prompt_tokens,
-          completionTokens: response.usage.completion_tokens,
-          cost: cost.toFixed(6),
-        },
-      });
-    } catch (err) {
-      results.push({
-        input: tc as unknown as Record<string, unknown>,
-        modelOutput: `Error: ${err instanceof Error ? err.message : String(err)}`,
-        expected: "N/A",
-        passed: false,
-        score: 0,
-      });
-    }
+          cost,
+        };
+      } catch (err) {
+        completed++;
+        onProgress(completed, cases.length);
+        return {
+          result: {
+            input: tc as unknown as Record<string, unknown>,
+            modelOutput: `Error: ${err instanceof Error ? err.message : String(err)}`,
+            expected: "N/A",
+            passed: false,
+            score: 0,
+          } as CaseResult,
+          latency: 0,
+          tokens: 0,
+          cost: 0,
+        };
+      }
+    },
+    2
+  );
 
-    onProgress(i + 1, cases.length);
-  }
-
+  const results = caseResults.map((r) => r.result);
   const n = cases.length || 1;
+  const totalLatency = caseResults.reduce((s, r) => s + r.latency, 0);
+  const totalTokens = caseResults.reduce((s, r) => s + r.tokens, 0);
+  const totalCost = caseResults.reduce((s, r) => s + r.cost, 0);
 
   return {
     metrics: {

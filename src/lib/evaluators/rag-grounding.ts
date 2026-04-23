@@ -1,5 +1,6 @@
 import { callModel } from "@/lib/api";
 import type { ModelConfig, CaseResult, EvaluationResult } from "@/lib/types";
+import { llmJudge, parallelEval } from "./llm-judge";
 
 interface RAGCase {
   context: string;
@@ -7,111 +8,122 @@ interface RAGCase {
   ground_truth: string;
 }
 
-function tokenize(text: string): Set<string> {
-  return new Set(
-    text
-      .toLowerCase()
-      .replace(/[^\w\s]/g, "")
-      .split(/\s+/)
-      .filter((t) => t.length > 1)
-  );
-}
+const JUDGE_SYSTEM = `You are an expert RAG (Retrieval-Augmented Generation) evaluator. You assess whether an AI model correctly grounded its answer in the provided context.
 
-function jaccardSimilarity(a: string, b: string): number {
-  const setA = tokenize(a);
-  const setB = tokenize(b);
-  if (setA.size === 0 && setB.size === 0) return 1;
-  if (setA.size === 0 || setB.size === 0) return 0;
+You will receive:
+1. The context provided to the model
+2. The question asked
+3. The ground truth answer
+4. The model's answer
 
-  let intersection = 0;
-  for (const token of setA) {
-    if (setB.has(token)) intersection++;
-  }
-  const union = new Set([...setA, ...setB]).size;
-  return intersection / union;
-}
+Evaluate on:
+- **Grounding**: Is the answer derived from the context, not from external knowledge?
+- **Semantic Correctness**: Does the answer convey the same meaning as the ground truth?
+- **Context Utilization**: Did the model use relevant parts of the context effectively?
+- **No Hallucination**: Did the model avoid adding information not in the context?
+- **Appropriate Refusal**: If the context doesn't contain the answer, did the model say so?
 
-function contextOverlap(answer: string, context: string): number {
-  const answerTokens = tokenize(answer);
-  const contextTokens = tokenize(context);
-  if (answerTokens.size === 0) return 0;
-
-  let fromContext = 0;
-  for (const token of answerTokens) {
-    if (contextTokens.has(token)) fromContext++;
-  }
-  return fromContext / answerTokens.size;
-}
+Respond with ONLY a JSON object:
+{
+  "passed": true/false,
+  "score": 0.0-1.0,
+  "reasoning": "explanation",
+  "confidence": 0.0-1.0,
+  "grounded": true/false,
+  "context_utilization": 0.0-1.0,
+  "semantic_match": 0.0-1.0
+}`;
 
 export async function evaluate(
   cases: RAGCase[],
   config: ModelConfig,
   onProgress: (completed: number, total: number) => void
 ): Promise<EvaluationResult> {
-  const results: CaseResult[] = [];
-  let totalSemantic = 0;
-  let totalGrounding = 0;
-  let totalContextUtil = 0;
+  let completed = 0;
 
-  for (let i = 0; i < cases.length; i++) {
-    const tc = cases[i];
+  const caseResults = await parallelEval(
+    cases,
+    async (tc) => {
+      try {
+        const response = await callModel({
+          messages: [
+            {
+              role: "system",
+              content: `Answer the question using ONLY the provided context. Be concise.\n\nContext: ${tc.context}`,
+            },
+            { role: "user", content: tc.question },
+          ],
+          config,
+        });
 
-    try {
-      const response = await callModel({
-        messages: [
-          {
-            role: "system",
-            content: `Answer the question using ONLY the provided context. Be concise.\n\nContext: ${tc.context}`,
-          },
-          { role: "user", content: tc.question },
-        ],
-        config,
-      });
+        const verdict = await llmJudge(
+          config,
+          JUDGE_SYSTEM,
+          `Context: ${tc.context}\n\nQuestion: ${tc.question}\n\nGround Truth: ${tc.ground_truth}\n\nModel's Answer:\n${response.content}`
+        );
 
-      const semanticScore = jaccardSimilarity(response.content, tc.ground_truth);
-      const ctxUtil = contextOverlap(response.content, tc.context);
-      const grounded = semanticScore >= 0.3;
+        let contextUtil = 0.5;
+        let semanticMatch = 0.5;
+        try {
+          const parsed = JSON.parse(
+            (verdict.reasoning.match(/\{[\s\S]*\}/) || ["{}"])[0]
+          );
+          contextUtil = typeof parsed.context_utilization === "number" ? parsed.context_utilization : verdict.score;
+          semanticMatch = typeof parsed.semantic_match === "number" ? parsed.semantic_match : verdict.score;
+        } catch {
+          contextUtil = verdict.score;
+          semanticMatch = verdict.score;
+        }
 
-      totalSemantic += semanticScore;
-      totalGrounding += grounded ? 1 : 0;
-      totalContextUtil += ctxUtil;
+        completed++;
+        onProgress(completed, cases.length);
 
-      results.push({
-        input: tc as unknown as Record<string, unknown>,
-        modelOutput: response.content,
-        expected: tc.ground_truth,
-        passed: grounded,
-        score: semanticScore,
-        metadata: {
-          semanticScore,
-          contextUtilization: ctxUtil,
-          latency: response.latency,
-        },
-      });
-    } catch (err) {
-      results.push({
-        input: tc as unknown as Record<string, unknown>,
-        modelOutput: `Error: ${err instanceof Error ? err.message : String(err)}`,
-        expected: tc.ground_truth,
-        passed: false,
-        score: 0,
-      });
-    }
+        return {
+          result: {
+            input: tc as unknown as Record<string, unknown>,
+            modelOutput: response.content,
+            expected: tc.ground_truth,
+            passed: verdict.passed,
+            score: verdict.score,
+            metadata: {
+              judgeReasoning: verdict.reasoning,
+              semanticScore: semanticMatch,
+              contextUtilization: contextUtil,
+              latency: response.latency,
+            },
+          } as CaseResult,
+          grounded: verdict.passed,
+          contextUtil,
+          semanticMatch,
+        };
+      } catch (err) {
+        completed++;
+        onProgress(completed, cases.length);
+        return {
+          result: {
+            input: tc as unknown as Record<string, unknown>,
+            modelOutput: `Error: ${err instanceof Error ? err.message : String(err)}`,
+            expected: tc.ground_truth,
+            passed: false,
+            score: 0,
+          } as CaseResult,
+          grounded: false,
+          contextUtil: 0,
+          semanticMatch: 0,
+        };
+      }
+    },
+    3
+  );
 
-    onProgress(i + 1, cases.length);
-  }
-
+  const results = caseResults.map((r) => r.result);
   const n = cases.length || 1;
-  const groundingAccuracy = (totalGrounding / n) * 100;
-  const contextUtilization = (totalContextUtil / n) * 100;
-  const avgSemanticScore = (totalSemantic / n) * 100;
+  const groundingAccuracy = (caseResults.filter((r) => r.grounded).length / n) * 100;
+  const contextUtilization = (caseResults.reduce((s, r) => s + r.contextUtil, 0) / n) * 100;
+  const avgSemanticScore = (caseResults.reduce((s, r) => s + r.semanticMatch, 0) / n) * 100;
 
   return {
-    metrics: {
-      groundingAccuracy,
-      contextUtilization,
-      avgSemanticScore,
-    },
+    metrics: { groundingAccuracy, contextUtilization, avgSemanticScore },
     results,
     passed: groundingAccuracy >= 80,
   };

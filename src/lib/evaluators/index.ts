@@ -42,6 +42,11 @@ export async function runEvaluation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return evaluate(cases as any, config, onProgress);
     }
+    case "domain-knowledge": {
+      const { evaluate } = await import("./domain-knowledge");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return evaluate(cases as any, config, onProgress);
+    }
     default:
       throw new Error(`Unknown evaluation module: ${module}`);
   }
