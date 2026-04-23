@@ -21,6 +21,19 @@ function isLocalUrl(url: string): boolean {
   );
 }
 
+/** Use IPv4 for local APIs so server-side and Node do not target `::1` when only IPv4 is listening. */
+function normalizeLocalhostToIpv4(urlString: string): string {
+  try {
+    const u = new URL(urlString);
+    if (u.hostname === "localhost" || u.hostname === "::1") {
+      u.hostname = "127.0.0.1";
+    }
+    return u.href;
+  } catch {
+    return urlString;
+  }
+}
+
 export async function callModel(options: CallModelOptions): Promise<ApiResponse> {
   const { messages, config, tools, responseFormat } = options;
 
@@ -38,7 +51,9 @@ export async function callModel(options: CallModelOptions): Promise<ApiResponse>
     body.response_format = responseFormat;
   }
 
-  const targetUrl = `${config.baseUrl}/chat/completions`;
+  const baseUrl =
+    isLocalUrl(config.baseUrl) ? normalizeLocalhostToIpv4(config.baseUrl) : config.baseUrl;
+  const targetUrl = `${baseUrl}/chat/completions`;
   const useProxy = isLocalUrl(config.baseUrl);
 
   const fetchUrl = useProxy

@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/** Node fetch often resolves `localhost` to `::1` while Ollama typically listens on IPv4 only, causing ECONNREFUSED or long fallback delays. */
+function normalizeLocalhostToIpv4(urlString: string): string {
+  try {
+    const u = new URL(urlString);
+    if (u.hostname === "localhost" || u.hostname === "::1") {
+      u.hostname = "127.0.0.1";
+    }
+    return u.href;
+  } catch {
+    return urlString;
+  }
+}
+
 /**
  * Server-side proxy for local model APIs (Ollama, LM Studio, etc.)
  * that reject browser CORS preflight requests.
@@ -8,10 +21,12 @@ import { NextRequest, NextResponse } from "next/server";
  * and this route forwards them server-side, bypassing CORS entirely.
  */
 export async function POST(req: NextRequest) {
-  const targetUrl = req.nextUrl.searchParams.get("url");
-  if (!targetUrl) {
+  const rawUrl = req.nextUrl.searchParams.get("url");
+  if (!rawUrl) {
     return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
   }
+
+  const targetUrl = normalizeLocalhostToIpv4(rawUrl);
 
   try {
     const body = await req.text();

@@ -6,7 +6,7 @@ import { MetricCard } from "@/components/metrics/metric-card";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import {
   ChevronDown, ChevronRight, CheckCircle2, XCircle,
-  Copy, Check, ClipboardList,
+  Copy, Check, ClipboardList, Info,
 } from "lucide-react";
 import type { CaseResult, MetricDefinition } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,14 @@ interface ResultsPanelProps {
   cases: CaseResult[];
   passed: boolean;
   metricDefinitions: MetricDefinition[];
+}
+
+const PERF_NO_EXPECTED = new Set(["N/A (performance test)", "N/A"]);
+
+function shouldShowExpected(c: CaseResult): boolean {
+  if (PERF_NO_EXPECTED.has(c.expected)) return false;
+  if (!c.expected || c.expected.trim() === "") return false;
+  return true;
 }
 
 function getMetricStatus(value: number, def: MetricDefinition): "pass" | "fail" | "warning" {
@@ -31,7 +39,78 @@ function getMetricStatus(value: number, def: MetricDefinition): "pass" | "fail" 
   }
 }
 
+interface ScaleRef {
+  label: string;
+  value: number;
+  color: string;
+}
+
+const LATENCY_SCALE: ScaleRef[] = [
+  { label: "Excellent", value: 500, color: "#22c55e" },
+  { label: "Good", value: 1500, color: "#84cc16" },
+  { label: "Acceptable", value: 3000, color: "#eab308" },
+  { label: "Slow", value: 6000, color: "#f97316" },
+  { label: "Very Slow", value: 10000, color: "#ef4444" },
+];
+
+const COST_SCALE: ScaleRef[] = [
+  { label: "Cheap", value: 0.001, color: "#22c55e" },
+  { label: "Low", value: 0.01, color: "#84cc16" },
+  { label: "Moderate", value: 0.05, color: "#eab308" },
+  { label: "Expensive", value: 0.15, color: "#f97316" },
+  { label: "Very Expensive", value: 0.5, color: "#ef4444" },
+];
+
+function getScaleForMetric(key: string): ScaleRef[] | null {
+  if (key === "avgTTFT" || key === "avgResponseTime") return LATENCY_SCALE;
+  if (key === "estimatedCost") return COST_SCALE;
+  return null;
+}
+
+function getPositionOnScale(value: number, scale: ScaleRef[]): { pct: number; color: string; label: string } {
+  if (value <= scale[0].value) return { pct: 5, color: scale[0].color, label: scale[0].label };
+  for (let i = 1; i < scale.length; i++) {
+    if (value <= scale[i].value) {
+      const lo = scale[i - 1].value;
+      const hi = scale[i].value;
+      const rangePct = (value - lo) / (hi - lo);
+      const segmentWidth = 100 / scale.length;
+      const pct = ((i - 1) + rangePct) * segmentWidth;
+      return { pct: Math.min(95, Math.max(5, pct)), color: scale[i].color, label: scale[i].label };
+    }
+  }
+  return { pct: 95, color: scale[scale.length - 1].color, label: scale[scale.length - 1].label };
+}
+
+function ScaleBar({ value, scale, unit }: { value: number; scale: ScaleRef[]; unit: string }) {
+  const pos = getPositionOnScale(value, scale);
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="relative h-3 rounded-full overflow-hidden flex">
+        {scale.map((s, i) => (
+          <div key={i} className="flex-1 h-full" style={{ backgroundColor: s.color, opacity: 0.35 }} />
+        ))}
+        <motion.div
+          initial={{ left: "0%" }}
+          animate={{ left: `${pos.pct}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full border-2 border-white/80 shadow-lg z-10"
+          style={{ backgroundColor: pos.color }}
+          title={`${value.toLocaleString()}${unit} — ${pos.label}`}
+        />
+      </div>
+      <div className="flex justify-between text-[9px] text-muted-foreground/50">
+        {scale.map((s, i) => (
+          <span key={i} style={{ color: s.color }} className="font-semibold">{s.label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ResultsPanel({ metrics, cases, passed, metricDefinitions }: ResultsPanelProps) {
+  const isPerformance = metricDefinitions.some((d) => d.key === "avgTTFT" || d.key === "avgResponseTime");
+
   return (
     <div className="space-y-5">
       {/* Header row */}
@@ -58,19 +137,30 @@ export function ResultsPanel({ metrics, cases, passed, metricDefinitions }: Resu
       )}>
         {metricDefinitions.map((def, i) => {
           const value = metrics[def.key] ?? 0;
+          const scale = getScaleForMetric(def.key);
           return (
-            <MetricCard
-              key={def.key}
-              label={def.label}
-              value={value}
-              unit={def.unit}
-              status={getMetricStatus(value, def)}
-              delay={i * 0.08}
-              decimals={def.unit === "$" ? 4 : def.unit === "" && value < 1 ? 3 : 1}
-            />
+            <div key={def.key}>
+              <MetricCard
+                label={def.label}
+                value={value}
+                unit={def.unit}
+                status={isPerformance ? "neutral" : getMetricStatus(value, def)}
+                delay={i * 0.08}
+                decimals={def.unit === "$" ? 4 : def.unit === "" && value < 1 ? 3 : 1}
+              />
+              {scale && <ScaleBar value={value} scale={scale} unit={def.unit} />}
+            </div>
           );
         })}
       </div>
+
+      {/* Performance legend */}
+      {isPerformance && (
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+          <Info className="h-3 w-3" />
+          Scale shows reference ranges. Position indicates where your model sits relative to typical performance.
+        </div>
+      )}
 
       {/* Per-case results — full-width */}
       <div className="glass rounded-2xl overflow-hidden">
@@ -116,6 +206,7 @@ function CopyAllButton({ cases, metrics }: { cases: CaseResult[]; metrics: Recor
 
 function CaseRow({ caseResult, index }: { caseResult: CaseResult; index: number }) {
   const [expanded, setExpanded] = useState(false);
+  const showExpected = shouldShowExpected(caseResult);
 
   const inputSummary = Object.entries(caseResult.input)
     .map(([k, v]) => {
@@ -165,10 +256,12 @@ function CaseRow({ caseResult, index }: { caseResult: CaseResult; index: number 
         {expanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
             <div className="border-t border-border/20 bg-accent/5 px-4 py-4">
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className={cn("grid gap-4", showExpected ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
                 <DetailBlock label="Input" content={JSON.stringify(caseResult.input, null, 2)} />
                 <DetailBlock label="Model Output" content={caseResult.modelOutput} />
-                <DetailBlock label="Expected" content={caseResult.expected} />
+                {showExpected && (
+                  <DetailBlock label="Expected" content={caseResult.expected} />
+                )}
               </div>
               {caseResult.metadata && Object.keys(caseResult.metadata).length > 0 && (
                 <div className="mt-4">

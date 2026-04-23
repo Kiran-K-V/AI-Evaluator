@@ -16,6 +16,8 @@ import {
   RefreshCcw,
   FileText,
   Microscope,
+  GitCompareArrows,
+  SlidersHorizontal,
   History,
   Settings,
   ChevronLeft,
@@ -112,6 +114,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {moduleLinks.map((m) => (
           <NavItem key={m.slug} href={`/evaluate/${m.slug}`} icon={m.icon} label={m.label} active={isActive(`/evaluate/${m.slug}`)} collapsed={collapsed} />
         ))}
+
+        <SectionLabel collapsed={collapsed} label="Custom" />
+        <NavItem href="/custom/ab-testing" icon={GitCompareArrows} label="A/B Testing" active={isActive("/custom/ab-testing")} collapsed={collapsed} accent />
+        <NavItem href="/custom/general-eval" icon={SlidersHorizontal} label="General Eval" active={isActive("/custom/general-eval")} collapsed={collapsed} accent />
 
         <SectionLabel collapsed={collapsed} label="Batch" />
         <NavItem href="/run-all" icon={Zap} label="Run All" active={isActive("/run-all")} collapsed={collapsed} accent />
