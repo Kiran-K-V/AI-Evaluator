@@ -13,6 +13,8 @@ import {
   Tags,
   Gauge,
   GraduationCap,
+  RefreshCcw,
+  FileText,
   History,
   Settings,
   ChevronLeft,
@@ -30,6 +32,8 @@ const moduleLinks = [
   { slug: "structured-output", label: "Structured Output", icon: Braces },
   { slug: "classification", label: "Classification", icon: Tags },
   { slug: "domain-knowledge", label: "Domain Knowledge", icon: GraduationCap },
+  { slug: "consistency", label: "Consistency", icon: RefreshCcw },
+  { slug: "summarization", label: "Summarization", icon: FileText },
   { slug: "performance", label: "Performance", icon: Gauge },
 ];
 

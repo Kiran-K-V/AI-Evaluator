@@ -47,6 +47,16 @@ export async function runEvaluation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return evaluate(cases as any, config, onProgress);
     }
+    case "consistency": {
+      const { evaluate } = await import("./consistency");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return evaluate(cases as any, config, onProgress);
+    }
+    case "summarization": {
+      const { evaluate } = await import("./summarization");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return evaluate(cases as any, config, onProgress);
+    }
     default:
       throw new Error(`Unknown evaluation module: ${module}`);
   }

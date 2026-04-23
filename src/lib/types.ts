@@ -6,12 +6,29 @@ export type ModuleSlug =
   | "structured-output"
   | "classification"
   | "performance"
-  | "domain-knowledge";
+  | "domain-knowledge"
+  | "consistency"
+  | "summarization";
+
+export interface ModelEntry {
+  id: string;
+  name: string;
+  provider: string;
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+}
 
 export interface ModelConfig {
   apiKey: string;
   model: string;
   baseUrl: string;
+}
+
+export interface AppConfig {
+  models: ModelEntry[];
+  activeModelId: string;
+  judgeModelId: string;
 }
 
 export interface CaseResult {

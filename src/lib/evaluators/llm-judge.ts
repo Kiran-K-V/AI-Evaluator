@@ -1,4 +1,5 @@
 import { callModel } from "@/lib/api";
+import { getJudgeConfig } from "@/lib/settings";
 import type { ModelConfig } from "@/lib/types";
 
 export interface JudgeVerdict {
@@ -8,17 +9,24 @@ export interface JudgeVerdict {
   confidence: number;
 }
 
+/**
+ * Uses the configured judge model (from Settings) to evaluate an output.
+ * Falls back to the provided config if no judge is configured.
+ */
 export async function llmJudge(
-  config: ModelConfig,
+  _config: ModelConfig,
   systemPrompt: string,
   userPrompt: string
 ): Promise<JudgeVerdict> {
+  const judgeConfig = getJudgeConfig();
+  const configToUse = judgeConfig.apiKey ? judgeConfig : _config;
+
   const response = await callModel({
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    config,
+    config: configToUse,
   });
 
   try {

@@ -461,6 +461,74 @@ export const MODULES: ModuleInfo[] = [
     ],
   },
   {
+    slug: "consistency",
+    name: "Consistency",
+    description: "Test output stability by running the same question multiple times and checking agreement across runs with LLM-as-judge.",
+    icon: "RefreshCcw",
+    sampleInput: [
+      {
+        prompt: "What are the three branches of the United States federal government and what is each branch's primary function?",
+        runs: 5,
+        category: "factual",
+      },
+      {
+        prompt: "Explain the CAP theorem in distributed systems. Which two of the three guarantees can be simultaneously satisfied?",
+        runs: 5,
+        category: "technical",
+      },
+      {
+        prompt: "A train leaves Station A at 9:00 AM traveling at 60 mph. Another train leaves Station B (300 miles away) at 10:00 AM traveling toward Station A at 90 mph. At what time do they meet?",
+        runs: 5,
+        category: "reasoning",
+      },
+      {
+        prompt: "Should a startup prioritize growth or profitability in its first two years? Give a structured argument for your position.",
+        runs: 5,
+        category: "opinion",
+      },
+    ],
+    metricDefinitions: [
+      { key: "overallConsistency", label: "Overall Consistency", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "factualConsistency", label: "Factual Consistency", unit: "%", passThreshold: 80, higherIsBetter: true },
+      { key: "semanticStability", label: "Semantic Stability", unit: "%", passThreshold: 65, higherIsBetter: true },
+      { key: "contradictionRate", label: "Contradiction Rate", unit: "%", passThreshold: 20, higherIsBetter: false },
+    ],
+  },
+  {
+    slug: "summarization",
+    name: "Summarization",
+    description: "Evaluate how well the model summarizes text — testing for faithfulness, coverage, conciseness, and coherence.",
+    icon: "FileText",
+    sampleInput: [
+      {
+        source: "The European Central Bank (ECB) held its key interest rates steady at its October 2024 meeting, keeping the main refinancing rate at 3.65% and the deposit facility rate at 3.25%. ECB President Christine Lagarde noted that while inflation had fallen to 1.7% in September — below the 2% target for the first time in over three years — the bank remained cautious about declaring victory over price pressures. Core inflation, which strips out volatile food and energy prices, remained at 2.7%. Lagarde emphasized that wage growth, while moderating, continued to run above levels consistent with the inflation target. The ECB's staff projections still anticipated inflation averaging 2.5% in 2024 and returning sustainably to 2% by late 2025. Markets broadly expected the ECB to begin cutting rates again in December, with futures pricing in a 25 basis point reduction.",
+        instruction: "Summarize this in 2-3 sentences.",
+        category: "news",
+      },
+      {
+        source: "Retrieval-Augmented Generation (RAG) combines a retrieval component with a generative language model. The retriever searches a large corpus of documents to find passages relevant to a query. These passages are then prepended to the query as context for the generator, which produces a response grounded in the retrieved evidence. RAG addresses key limitations of standalone LLMs: it reduces hallucination by grounding responses in source documents, enables access to information beyond the model's training cutoff, and allows the knowledge base to be updated without retraining. However, RAG systems face challenges including retrieval quality (irrelevant or noisy passages degrade output), context window limits (too many passages overwhelm the model), latency overhead from the retrieval step, and the risk of the model ignoring retrieved context in favor of parametric knowledge. Advanced RAG architectures use re-ranking, query decomposition, and iterative retrieval to mitigate these issues.",
+        instruction: "Write a technical summary covering the architecture, benefits, and challenges.",
+        category: "technical",
+      },
+      {
+        source: "Patient: 67-year-old male. Chief Complaint: Progressive dyspnea on exertion over 3 months, now occurring with minimal activity. History: Former smoker (40 pack-years, quit 5 years ago). Type 2 DM on metformin. Hypertension on lisinopril and amlodipine. BMI 31. Physical Exam: BP 142/88, HR 92, SpO2 93% on room air. JVP elevated at 10cm. Bilateral lower extremity pitting edema. Bibasilar crackles on auscultation. S3 gallop present. Labs: BNP 1,240 pg/mL (normal <100). Creatinine 1.4 mg/dL. HbA1c 7.8%. Troponin negative. Echocardiogram: LVEF 35%, moderate mitral regurgitation, dilated left ventricle. Assessment: New diagnosis of heart failure with reduced ejection fraction (HFrEF), NYHA Class III.",
+        instruction: "Summarize this clinical case for a handoff note to the next attending physician.",
+        category: "medical",
+      },
+      {
+        source: "SECTION 14.2 — LIMITATION OF LIABILITY\n\n(a) IN NO EVENT SHALL EITHER PARTY'S AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS AGREEMENT EXCEED THE TOTAL AMOUNTS PAID OR PAYABLE BY CUSTOMER TO PROVIDER DURING THE TWELVE (12) MONTH PERIOD IMMEDIATELY PRECEDING THE EVENT GIVING RISE TO THE CLAIM.\n\n(b) IN NO EVENT SHALL EITHER PARTY BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION DAMAGES FOR LOSS OF PROFITS, GOODWILL, USE, DATA, OR OTHER INTANGIBLE LOSSES, REGARDLESS OF WHETHER SUCH PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.\n\n(c) THE LIMITATIONS IN THIS SECTION 14.2 SHALL NOT APPLY TO: (i) A PARTY'S INDEMNIFICATION OBLIGATIONS UNDER SECTION 13; (ii) A PARTY'S BREACH OF SECTION 9 (CONFIDENTIALITY); (iii) CUSTOMER'S PAYMENT OBLIGATIONS; OR (iv) DAMAGES ARISING FROM A PARTY'S GROSS NEGLIGENCE OR WILLFUL MISCONDUCT.",
+        instruction: "Summarize the key points of this liability clause in plain English.",
+        category: "legal",
+      },
+    ],
+    metricDefinitions: [
+      { key: "faithfulness", label: "Faithfulness", unit: "%", passThreshold: 75, higherIsBetter: true },
+      { key: "coverage", label: "Coverage", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "conciseness", label: "Conciseness", unit: "%", passThreshold: 65, higherIsBetter: true },
+      { key: "overallQuality", label: "Overall Quality", unit: "%", passThreshold: 70, higherIsBetter: true },
+    ],
+  },
+  {
     slug: "performance",
     name: "Performance",
     description: "Measure response times, token usage, and estimated cost per run.",
