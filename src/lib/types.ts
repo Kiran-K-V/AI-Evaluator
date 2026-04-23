@@ -8,7 +8,8 @@ export type ModuleSlug =
   | "performance"
   | "domain-knowledge"
   | "consistency"
-  | "summarization";
+  | "summarization"
+  | "deepeval";
 
 export interface ModelEntry {
   id: string;

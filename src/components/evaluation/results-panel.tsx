@@ -134,7 +134,7 @@ function CaseRow({ caseResult, index }: { caseResult: CaseResult; index: number 
         )}
       >
         <span className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold",
           caseResult.passed
             ? "bg-emerald-500/10 text-emerald-400"
             : "bg-red-500/10 text-red-400"

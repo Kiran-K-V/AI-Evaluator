@@ -28,7 +28,8 @@ function estimateCost(
 export async function evaluate(
   cases: PerformanceCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -37,7 +38,10 @@ export async function evaluate(
     async (tc) => {
       try {
         const response = await callModel({
-          messages: [{ role: "user", content: tc.prompt }],
+          messages: [
+            ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
+            { role: "user" as const, content: tc.prompt },
+          ],
           config,
         });
 

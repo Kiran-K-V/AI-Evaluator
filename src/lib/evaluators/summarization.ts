@@ -37,7 +37,8 @@ A score >= 0.7 means the summary is professionally acceptable.`;
 export async function evaluate(
   cases: SummarizationCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -49,7 +50,7 @@ export async function evaluate(
           messages: [
             {
               role: "system",
-              content: "You are a skilled summarizer. Follow the instruction precisely. Be faithful to the source material — do not add information not present in the original text.",
+              content: systemPrompt || "You are a skilled summarizer. Follow the instruction precisely. Be faithful to the source material — do not add information not present in the original text.",
             },
             {
               role: "user",

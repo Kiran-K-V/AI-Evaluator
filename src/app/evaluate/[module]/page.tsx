@@ -24,17 +24,18 @@ export default function EvaluateModulePage({ params }: { params: Promise<{ modul
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [result, setResult] = useState<EvaluationResult | null>(null);
 
-  const handleRun = useCallback(async (cases: unknown[]) => {
+  const handleRun = useCallback(async (cases: unknown[], systemPrompt?: string) => {
     if (!mod) return;
     const config = getModelConfig();
-    if (!config.apiKey) { toast.error("Please configure your API key in Settings first."); return; }
+    const isLocal = config.baseUrl.includes("localhost") || config.baseUrl.includes("127.0.0.1");
+    if (!isLocal && !config.apiKey) { toast.error("Please configure your API key in Settings first."); return; }
 
     setRunning(true);
     setResult(null);
     setProgress({ current: 0, total: cases.length });
 
     try {
-      const evalResult = await runEvaluation(mod.slug, cases, config, (completed, total) => { setProgress({ current: completed, total }); });
+      const evalResult = await runEvaluation(mod.slug, cases, config, (completed, total) => { setProgress({ current: completed, total }); }, systemPrompt);
       setResult(evalResult);
 
       const run = {

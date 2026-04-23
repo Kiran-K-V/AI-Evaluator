@@ -32,7 +32,8 @@ A score >= 0.7 means the responses are substantively consistent. Below that mean
 export async function evaluate(
   cases: ConsistencyCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
   const totalWork = cases.reduce((s, c) => s + c.runs, 0) + cases.length;
@@ -46,7 +47,10 @@ export async function evaluate(
       for (let r = 0; r < numRuns; r++) {
         try {
           const response = await callModel({
-            messages: [{ role: "user", content: tc.prompt }],
+            messages: [
+              ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
+              { role: "user" as const, content: tc.prompt },
+            ],
             config,
           });
           responses.push(response.content);

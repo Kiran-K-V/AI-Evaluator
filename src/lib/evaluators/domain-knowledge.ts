@@ -36,7 +36,8 @@ Be strict. Domain experts would review these answers. A score >= 0.6 means the a
 export async function evaluate(
   cases: DomainKnowledgeCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -48,7 +49,7 @@ export async function evaluate(
           messages: [
             {
               role: "system",
-              content: `You are a knowledgeable expert. Answer the following ${tc.domain} question with precision and depth. Provide specific details, mechanisms, figures, and references where applicable. If you are unsure about something, say so rather than guessing.`,
+              content: systemPrompt || `You are a knowledgeable expert. Answer the following ${tc.domain} question with precision and depth. Provide specific details, mechanisms, figures, and references where applicable. If you are unsure about something, say so rather than guessing.`,
             },
             { role: "user", content: tc.question },
           ],

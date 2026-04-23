@@ -37,7 +37,8 @@ Respond with ONLY a JSON object:
 export async function evaluate(
   cases: RAGCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -49,7 +50,9 @@ export async function evaluate(
           messages: [
             {
               role: "system",
-              content: `Answer the question using ONLY the provided context. Be concise.\n\nContext: ${tc.context}`,
+              content: systemPrompt
+                ? `${systemPrompt}\n\nContext: ${tc.context}`
+                : `Answer the question using ONLY the provided context. Be concise.\n\nContext: ${tc.context}`,
             },
             { role: "user", content: tc.question },
           ],

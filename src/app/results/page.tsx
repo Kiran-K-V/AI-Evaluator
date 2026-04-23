@@ -6,7 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import {
   Search, Wrench, Brain, BookOpen, Shield, Braces, Tags,
-  Gauge, GraduationCap, RefreshCcw, FileText, FlaskConical, Trash2,
+  Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical, Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { MODULES } from "@/lib/modules";
 import type { EvaluationRun, ModuleSlug } from "@/lib/types";
 import { toast } from "sonner";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText };
+const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
 export default function ResultsPage() {
   const [runs, setRuns] = useState<EvaluationRun[]>([]);

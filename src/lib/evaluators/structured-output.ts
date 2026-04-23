@@ -24,7 +24,8 @@ function extractJSON(text: string): string | null {
 export async function evaluate(
   cases: StructuredOutputCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -36,7 +37,7 @@ export async function evaluate(
           messages: [
             {
               role: "system",
-              content: "You are a helpful assistant that responds ONLY with valid JSON. Do not include any explanation or markdown. Output raw JSON only.",
+              content: systemPrompt || "You are a helpful assistant that responds ONLY with valid JSON. Do not include any explanation or markdown. Output raw JSON only.",
             },
             { role: "user", content: tc.prompt },
           ],

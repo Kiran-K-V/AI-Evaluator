@@ -11,7 +11,8 @@ interface ToolCallingCase {
 export async function evaluate(
   cases: ToolCallingCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -21,7 +22,7 @@ export async function evaluate(
       try {
         const response = await callModel({
           messages: [
-            { role: "system", content: "You are a helpful assistant. Use the provided tools when appropriate." },
+            { role: "system", content: systemPrompt || "You are a helpful assistant. Use the provided tools when appropriate." },
             { role: "user", content: tc.task },
           ],
           config,

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import {
   ArrowLeft, Clock, Bot, Hash, Wrench, Brain, BookOpen,
-  Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, FlaskConical, Trash2,
+  Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
@@ -16,7 +16,7 @@ import { getModule } from "@/lib/modules";
 import type { EvaluationRun } from "@/lib/types";
 import { toast } from "sonner";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText };
+const iconMap: Record<string, React.ElementType> = { Wrench, Brain, BookOpen, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
 export default function ResultDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

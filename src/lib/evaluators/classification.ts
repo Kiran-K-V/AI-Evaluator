@@ -53,7 +53,8 @@ function computeF1Macro(
 export async function evaluate(
   cases: ClassificationCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -65,7 +66,7 @@ export async function evaluate(
           messages: [
             {
               role: "system",
-              content: `You are a text classifier. Classify the given text into exactly one of these labels: ${tc.labels.join(", ")}.\n\nRespond with ONLY the label, nothing else.`,
+              content: systemPrompt || `You are a text classifier. Classify the given text into exactly one of these labels: ${tc.labels.join(", ")}.\n\nRespond with ONLY the label, nothing else.`,
             },
             { role: "user", content: tc.text },
           ],

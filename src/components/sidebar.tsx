@@ -15,6 +15,7 @@ import {
   GraduationCap,
   RefreshCcw,
   FileText,
+  Microscope,
   History,
   Settings,
   ChevronLeft,
@@ -34,6 +35,7 @@ const moduleLinks = [
   { slug: "domain-knowledge", label: "Domain Knowledge", icon: GraduationCap },
   { slug: "consistency", label: "Consistency", icon: RefreshCcw },
   { slug: "summarization", label: "Summarization", icon: FileText },
+  { slug: "deepeval", label: "DeepEval Metrics", icon: Microscope },
   { slug: "performance", label: "Performance", icon: Gauge },
 ];
 
@@ -156,7 +158,7 @@ function NavItem({
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
         active
           ? "text-white"
           : accent
@@ -171,7 +173,7 @@ function NavItem({
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
         />
       )}
-      <Icon className={cn("h-4 w-4 shrink-0 relative z-10", active && "text-white")} />
+      <Icon className={cn("h-[18px] w-[18px] shrink-0 relative z-10", active && "text-white")} />
       <AnimatePresence mode="wait">
         {!collapsed && (
           <motion.span

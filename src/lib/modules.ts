@@ -529,6 +529,67 @@ export const MODULES: ModuleInfo[] = [
     ],
   },
   {
+    slug: "deepeval",
+    name: "DeepEval Metrics",
+    description: "Production-grade RAG evaluation — Answer Relevancy, Faithfulness, Contextual Relevancy, Contextual Recall, and Contextual Precision scored by expert LLM judges.",
+    icon: "Microscope",
+    sampleInput: [
+      {
+        query: "What are the main benefits of using RAG over fine-tuning for domain-specific applications?",
+        response: "RAG offers several advantages over fine-tuning: it provides up-to-date information without retraining, allows easy knowledge base updates, reduces hallucination by grounding answers in source documents, and is more cost-effective since you don't need to retrain the entire model. However, it introduces retrieval latency and depends heavily on retrieval quality.",
+        context: [
+          "Retrieval-Augmented Generation (RAG) combines retrieval with generation to ground LLM outputs in external knowledge. Key benefits include: (1) No retraining needed — the knowledge base can be updated independently. (2) Reduced hallucination — answers are grounded in retrieved documents. (3) Cost efficiency — avoids expensive fine-tuning cycles. (4) Freshness — always uses the latest data.",
+          "Fine-tuning modifies model weights to learn domain-specific patterns. While powerful, it requires curated training data, is expensive to run, and the model can become stale as domain knowledge evolves. Fine-tuning is better suited for learning style, tone, or specialized reasoning patterns rather than factual knowledge.",
+        ],
+        expected_answer: "RAG is better than fine-tuning for domain-specific factual knowledge because it avoids retraining costs, keeps information current, and grounds answers in retrieved documents to reduce hallucination.",
+      },
+      {
+        query: "What is the maximum liability cap under the enterprise SaaS agreement?",
+        response: "The maximum liability is capped at 12 months of fees paid by the customer, except in cases of gross negligence, data breaches, or IP infringement where the cap is 3x the annual fees.",
+        context: [
+          "SECTION 8.1 — LIABILITY CAP: The aggregate liability of either party shall not exceed the total fees paid by Customer in the 12-month period preceding the claim. SECTION 8.2 — EXCEPTIONS: The limitation in 8.1 does not apply to: (a) breach of confidentiality obligations under Section 6; (b) indemnification obligations under Section 9; (c) Customer's payment obligations.",
+          "SECTION 9.3 — INDEMNIFICATION CAP: Indemnification obligations under this Agreement are subject to a separate cap of two (2) times the annual subscription fees paid in the preceding 12-month period.",
+        ],
+        expected_answer: "Liability is capped at 12 months of fees paid, with exceptions for confidentiality breaches and indemnification which has a separate 2x annual fee cap.",
+      },
+      {
+        query: "How does the BERT model handle tokenization of out-of-vocabulary words?",
+        response: "BERT uses WordPiece tokenization, which breaks unknown words into subword units. For example, 'unhappiness' might be tokenized as ['un', '##happi', '##ness']. The '##' prefix indicates a continuation subword. This allows BERT to handle any word by composing it from known subword tokens, maintaining a fixed vocabulary size of around 30,000 tokens.",
+        context: [
+          "BERT (Bidirectional Encoder Representations from Transformers) uses WordPiece tokenization. WordPiece builds a vocabulary of subword units. Words not in the vocabulary are decomposed into the longest matching subword tokens. A '##' prefix denotes continuation tokens. The standard BERT vocabulary contains approximately 30,522 tokens.",
+          "Alternative tokenization approaches include Byte-Pair Encoding (BPE) used by GPT models and SentencePiece used by T5 and LLaMA. Each approach has trade-offs in vocabulary size, handling of rare words, and multilingual support.",
+        ],
+        expected_answer: "BERT uses WordPiece tokenization which breaks OOV words into subword units from a ~30K token vocabulary, using ## prefix for continuation tokens.",
+      },
+      {
+        query: "What were the quarterly revenue figures for FY2024?",
+        response: "The quarterly revenue for FY2024 was: Q1 $45M, Q2 $52M, Q3 $61M, and Q4 $58M, bringing the total annual revenue to $216M, representing 28% year-over-year growth.",
+        context: [
+          "FY2024 Financial Highlights: Q1 revenue was $45.2M (up 22% YoY). Q2 revenue reached $52.1M (up 26% YoY). Q3 revenue hit $61.3M (up 35% YoY), the strongest quarter driven by enterprise expansion.",
+          "The company's FY2023 total revenue was $168.5M. The board projects FY2025 revenue between $250M-$270M based on current pipeline and market conditions.",
+        ],
+        expected_answer: "Q1: $45.2M, Q2: $52.1M, Q3: $61.3M. Q4 has not been reported in the provided context.",
+      },
+      {
+        query: "Explain the difference between horizontal and vertical scaling in distributed systems.",
+        response: "Horizontal scaling (scaling out) adds more machines to a system, distributing the load across multiple nodes. Vertical scaling (scaling up) increases the resources of a single machine. Horizontal scaling offers better fault tolerance and theoretically unlimited growth but requires handling distributed state. Vertical scaling is simpler but has physical hardware limits.",
+        context: [
+          "The company's cloud infrastructure documentation recommends horizontal scaling for stateless services and vertical scaling for database workloads that require strong consistency. Auto-scaling groups should be configured with a minimum of 3 instances across availability zones.",
+          "Infrastructure costs for Q3 2024 were $4.2M, with 65% allocated to compute instances and 35% to managed database services. The team is evaluating a migration from vertical to horizontal scaling for the analytics pipeline.",
+        ],
+        expected_answer: "The context discusses the company's scaling strategy — horizontal for stateless services, vertical for databases — but does not provide a general technical explanation of the concepts.",
+      },
+    ],
+    metricDefinitions: [
+      { key: "answerRelevancy", label: "Answer Relevancy", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "faithfulness", label: "Faithfulness", unit: "%", passThreshold: 75, higherIsBetter: true },
+      { key: "contextualRelevancy", label: "Contextual Relevancy", unit: "%", passThreshold: 65, higherIsBetter: true },
+      { key: "contextualRecall", label: "Contextual Recall", unit: "%", passThreshold: 65, higherIsBetter: true },
+      { key: "contextualPrecision", label: "Contextual Precision", unit: "%", passThreshold: 65, higherIsBetter: true },
+      { key: "overallScore", label: "Overall Score", unit: "%", passThreshold: 65, higherIsBetter: true },
+    ],
+  },
+  {
     slug: "performance",
     name: "Performance",
     description: "Measure response times, token usage, and estimated cost per run.",

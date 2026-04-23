@@ -39,7 +39,8 @@ function contextIsUseful(context: string): boolean {
 export async function evaluate(
   cases: HallucinationCase[],
   config: ModelConfig,
-  onProgress: (completed: number, total: number) => void
+  onProgress: (completed: number, total: number) => void,
+  systemPrompt?: string
 ): Promise<EvaluationResult> {
   let completed = 0;
 
@@ -49,13 +50,16 @@ export async function evaluate(
       const hasUsefulContext = contextIsUseful(tc.context);
 
       try {
-        const systemPrompt = tc.context
+        const defaultSysPrompt = tc.context
           ? `Answer the question based ONLY on the following context. If the context does not contain the answer, say "I don't know".\n\nContext: ${tc.context}`
           : `Answer the following question. If you do not have reliable information, say "I don't know".`;
+        const sysPrompt = systemPrompt
+          ? (tc.context ? `${systemPrompt}\n\nContext: ${tc.context}` : systemPrompt)
+          : defaultSysPrompt;
 
         const response = await callModel({
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: sysPrompt },
             { role: "user", content: tc.question },
           ],
           config,

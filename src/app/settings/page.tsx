@@ -287,46 +287,46 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-0.5 shrink-0">
                       <button
                         onClick={() => handleTestModel(entry)}
                         disabled={isTesting}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-accent/50"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-accent/50"
                         title="Test connection"
                       >
-                        {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-500" /> : <Wifi className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {isTesting ? <Loader2 className="h-4 w-4 animate-spin text-orange-500" /> : <Wifi className="h-4 w-4 text-muted-foreground" />}
                       </button>
                       {!isActive && (
                         <button
                           onClick={() => handleSetActive(entry.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-emerald-500/10"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-emerald-500/10"
                           title="Set as active"
                         >
-                          <Star className="h-3.5 w-3.5 text-muted-foreground hover:text-emerald-400" />
+                          <Star className="h-4 w-4 text-muted-foreground hover:text-emerald-400" />
                         </button>
                       )}
                       {!isJudge && (
                         <button
                           onClick={() => handleSetJudge(entry.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-violet-500/10"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-violet-500/10"
                           title="Set as judge"
                         >
-                          <Scale className="h-3.5 w-3.5 text-muted-foreground hover:text-violet-400" />
+                          <Scale className="h-4 w-4 text-muted-foreground hover:text-violet-400" />
                         </button>
                       )}
                       <button
                         onClick={() => duplicateModel(entry)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-accent/50"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-accent/50"
                         title="Duplicate"
                       >
-                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Copy className="h-4 w-4 text-muted-foreground" />
                       </button>
                       <button
                         onClick={() => handleDeleteModel(entry.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-red-500/10"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-red-500/10"
                         title="Delete"
                       >
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-red-400" />
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
                       </button>
                     </div>
                   </div>
