@@ -13,6 +13,11 @@ export async function runEvaluation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return evaluate(cases as any, config, onProgress, systemPrompt);
     }
+    case "hallucination": {
+      const { evaluate } = await import("./hallucination");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return evaluate(cases as any, config, onProgress, systemPrompt);
+    }
     case "contextual-intelligence": {
       const { evaluate } = await import("./contextual-intelligence");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

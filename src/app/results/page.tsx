@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
-  Search, Wrench, Shield, Braces, Tags as TagsIcon,
+  Search, Wrench, Brain, Shield, Braces, Tags as TagsIcon,
   Gauge, GraduationCap, RefreshCcw, FileText, Microscope,
   FlaskConical, Trash2, Swords, Zap, ChevronDown, ChevronRight,
   Bot, X, Filter,
@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<string, React.ElementType> = {
-  Wrench, Shield, Braces, Tags: TagsIcon, Gauge, GraduationCap,
+  Wrench, Brain, Shield, Braces, Tags: TagsIcon, Gauge, GraduationCap,
   RefreshCcw, FileText, Microscope,
 };
 

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Wrench,
+  Brain,
   Shield,
   Braces,
   Tags,
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 
 const moduleLinks = [
   { slug: "tool-calling", label: "Tool Calling", icon: Wrench },
+  { slug: "hallucination", label: "Hallucination", icon: Brain },
   { slug: "contextual-intelligence", label: "Context Eval", icon: Microscope },
   { slug: "safety", label: "Safety & Toxicity", icon: Shield },
   { slug: "structured-output", label: "Structured Output", icon: Braces },

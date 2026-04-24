@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
-  Wrench, Shield, Braces, Tags, Gauge, GraduationCap,
+  Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap,
   RefreshCcw, FileText, Microscope,
   ArrowRight, FlaskConical, TrendingUp, TrendingDown, Activity,
   Zap, Swords,
@@ -19,7 +19,7 @@ import { getRunScore } from "@/lib/utils";
 import type { EvaluationRun } from "@/lib/types";
 
 const iconMap: Record<string, React.ElementType> = {
-  Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope,
+  Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope,
 };
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };

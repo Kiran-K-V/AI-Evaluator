@@ -1,5 +1,6 @@
 export type ModuleSlug =
   | "tool-calling"
+  | "hallucination"
   | "contextual-intelligence"
   | "safety"
   | "structured-output"
@@ -10,7 +11,7 @@ export type ModuleSlug =
   | "summarization";
 
 /** Legacy slugs kept for backward-compatible storage lookups. */
-export type LegacyModuleSlug = "hallucination" | "rag-grounding" | "deepeval";
+export type LegacyModuleSlug = "rag-grounding" | "deepeval";
 
 export interface ModelEntry {
   id: string;

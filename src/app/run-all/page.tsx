@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
   Zap, Play, Loader2, Check,
-  Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
+  Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import { runEvaluation } from "@/lib/evaluators";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
 import { cn, getResultScore } from "@/lib/utils";
 
-const iconMap: Record<string, React.ElementType> = { Wrench, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
+const iconMap: Record<string, React.ElementType> = { Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
 interface ModuleResult {
   slug: ModuleSlug;
