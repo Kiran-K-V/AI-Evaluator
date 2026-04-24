@@ -17,6 +17,7 @@ import {
   Microscope,
   GitCompareArrows,
   SlidersHorizontal,
+  Database,
   History,
   Settings,
   ChevronLeft,
@@ -116,6 +117,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <SectionLabel collapsed={collapsed} label="Custom" />
         <NavItem href="/custom/ab-testing" icon={GitCompareArrows} label="A/B Testing" active={isActive("/custom/ab-testing")} collapsed={collapsed} accent />
         <NavItem href="/custom/general-eval" icon={SlidersHorizontal} label="General Eval" active={isActive("/custom/general-eval")} collapsed={collapsed} accent />
+        <NavItem href="/custom/dataset" icon={Database} label="Custom Dataset" active={isActive("/custom/dataset")} collapsed={collapsed} accent />
 
         <SectionLabel collapsed={collapsed} label="Batch" />
         <NavItem href="/run-all" icon={Zap} label="Run All" active={isActive("/run-all")} collapsed={collapsed} accent />
