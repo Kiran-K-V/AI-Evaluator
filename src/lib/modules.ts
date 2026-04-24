@@ -12,6 +12,7 @@ export const MODULES: ModuleInfo[] = [
       {
         task: "What is Tesla's current stock price and has it gone up or down this week?",
         expected_tool: "get_stock_price",
+        expected_arguments: { get_stock_price: { ticker: "TSLA" } },
         tools: [
           { name: "get_stock_price", description: "Fetch real-time stock price and recent change data for a given ticker symbol", parameters: { type: "object", properties: { ticker: { type: "string" }, period: { type: "string", enum: ["1d", "1w", "1m"] } }, required: ["ticker"] } },
           { name: "search_web", description: "Search the web for any current information, news, or data", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
@@ -22,6 +23,7 @@ export const MODULES: ModuleInfo[] = [
       {
         task: "Block my calendar for deep work every morning from 9 to 11am for the next two weeks",
         expected_tool: "create_calendar_event",
+        expected_arguments: { create_calendar_event: { title: "deep work" } },
         tools: [
           { name: "create_reminder", description: "Set a one-time or recurring personal notification/reminder", parameters: { type: "object", properties: { message: { type: "string" }, time: { type: "string"}, recurrence: { type: "string" } }, required: ["message", "time"] } },
           { name: "create_calendar_event", description: "Create and schedule a calendar event or recurring time block", parameters: { type: "object", properties: { title: { type: "string" }, start_time: { type: "string" }, end_time: { type: "string" }, recurrence: { type: "string" } }, required: ["title", "start_time", "end_time"] } },
@@ -29,7 +31,7 @@ export const MODULES: ModuleInfo[] = [
         ],
       },
       // EDGE: Model might call search_web because it looks like a research task.
-      // Correct answer is no_tool_needed — all facts are in the model's training knowledge.
+      // Correct answer is no_tool_needed — model should respond directly without calling any tool.
       {
         task: "What is the capital of Germany and what is the chemical symbol for water?",
         expected_tool: "no_tool_needed",
@@ -44,6 +46,7 @@ export const MODULES: ModuleInfo[] = [
       {
         task: "How much is 3,500 USD in Japanese Yen right now?",
         expected_tool: "get_exchange_rate",
+        expected_arguments: { get_exchange_rate: { from: "USD", to: "JPY" } },
         tools: [
           { name: "calculate", description: "Perform mathematical calculations given an expression", parameters: { type: "object", properties: { expression: { type: "string" } }, required: ["expression"] } },
           { name: "get_exchange_rate", description: "Fetch real-time currency exchange rates between two currencies", parameters: { type: "object", properties: { from: { type: "string" }, to: { type: "string" }, amount: { type: "number" } }, required: ["from", "to"] } },
@@ -55,6 +58,7 @@ export const MODULES: ModuleInfo[] = [
       {
         task: "Draft a follow-up email to priya@startup.io about our proposal but don't send it yet — I want to review it first",
         expected_tool: "draft_email",
+        expected_arguments: { draft_email: { to: "priya@startup.io" } },
         tools: [
           { name: "send_email", description: "Compose and immediately send an email to a recipient", parameters: { type: "object", properties: { to: { type: "string" }, subject: { type: "string" }, body: { type: "string" } }, required: ["to", "subject", "body"] } },
           { name: "draft_email", description: "Compose an email draft and save it for later review without sending", parameters: { type: "object", properties: { to: { type: "string" }, subject: { type: "string" }, body: { type: "string" } }, required: ["to", "subject", "body"] } },
@@ -66,6 +70,7 @@ export const MODULES: ModuleInfo[] = [
       {
         task: "Draft and send a professional apology email to hiroshi@client.jp — he only reads Japanese",
         expected_tool: "send_email",
+        expected_arguments: { send_email: { to: "hiroshi@client.jp", language: "Japanese" } },
         tools: [
           { name: "translate_text", description: "Translate text from one language to another and return translated string", parameters: { type: "object", properties: { text: { type: "string" }, target_language: { type: "string" } }, required: ["text", "target_language"] } },
           { name: "send_email", description: "Compose and send an email with optional body language parameter for auto-translation", parameters: { type: "object", properties: { to: { type: "string" }, subject: { type: "string" }, body: { type: "string" }, language: { type: "string" } }, required: ["to", "subject", "body"] } },
@@ -74,9 +79,17 @@ export const MODULES: ModuleInfo[] = [
       },
       // MULTI-TOOL: Task explicitly requires TWO tools — weather + calendar.
       // Model must call BOTH get_weather and create_calendar_event, not just one.
+      // Includes tool_results to enable multi-turn: weather returns sunny, so calendar should be created.
       {
         task: "Check the weather in San Francisco this weekend, and if it's sunny, block my Saturday afternoon from 2-5pm for a park picnic",
         expected_tool: ["get_weather", "create_calendar_event"],
+        expected_arguments: {
+          get_weather: { location: "San Francisco" },
+          create_calendar_event: { title: "picnic" },
+        },
+        tool_results: {
+          get_weather: "{\"location\": \"San Francisco\", \"forecast\": [{\"day\": \"Saturday\", \"condition\": \"Sunny\", \"high\": 72, \"low\": 58}]}",
+        },
         tools: [
           { name: "get_weather", description: "Get current and forecast weather for a location", parameters: { type: "object", properties: { location: { type: "string" }, days: { type: "number" } }, required: ["location"] } },
           { name: "create_calendar_event", description: "Create and schedule a calendar event or time block", parameters: { type: "object", properties: { title: { type: "string" }, start_time: { type: "string" }, end_time: { type: "string" } }, required: ["title", "start_time", "end_time"] } },
@@ -85,9 +98,16 @@ export const MODULES: ModuleInfo[] = [
       },
       // MULTI-TOOL: Task requires search + calculate — get data then compute.
       // Model should NOT try to calculate without first fetching the exchange rate.
+      // tool_results simulates the exchange rate API returning a rate so calculate can use it.
       {
         task: "Look up today's EUR to USD exchange rate and calculate how much 15,000 EUR is in USD",
         expected_tool: ["get_exchange_rate", "calculate"],
+        expected_arguments: {
+          get_exchange_rate: { from: "EUR", to: "USD" },
+        },
+        tool_results: {
+          get_exchange_rate: "{\"from\": \"EUR\", \"to\": \"USD\", \"rate\": 1.0847, \"timestamp\": \"2025-01-15T12:00:00Z\"}",
+        },
         tools: [
           { name: "get_exchange_rate", description: "Fetch real-time currency exchange rates", parameters: { type: "object", properties: { from: { type: "string" }, to: { type: "string" } }, required: ["from", "to"] } },
           { name: "calculate", description: "Perform mathematical calculations given an expression", parameters: { type: "object", properties: { expression: { type: "string" } }, required: ["expression"] } },
@@ -99,6 +119,7 @@ export const MODULES: ModuleInfo[] = [
       {
         task: "What time is it right now in Tokyo?",
         expected_tool: "get_time",
+        expected_arguments: { get_time: { timezone: "Asia/Tokyo" } },
         tools: [
           { name: "get_time", description: "Get the current time in a specified timezone", parameters: { type: "object", properties: { timezone: { type: "string" } }, required: ["timezone"] } },
           { name: "get_weather", description: "Get current weather for a location", parameters: { type: "object", properties: { location: { type: "string" } }, required: ["location"] } },
@@ -109,7 +130,8 @@ export const MODULES: ModuleInfo[] = [
     metricDefinitions: [
       { key: "toolSelectionAccuracy", label: "Tool Selection Accuracy", unit: "%", passThreshold: 80, higherIsBetter: true },
       { key: "toolChainingSuccess", label: "Tool Chaining Success Rate", unit: "%", passThreshold: 70, higherIsBetter: true },
-      { key: "recoverySuccess", label: "Recovery Success Rate", unit: "%", passThreshold: 60, higherIsBetter: true },
+      { key: "argumentAccuracy", label: "Argument Accuracy", unit: "%", passThreshold: 70, higherIsBetter: true },
+      { key: "noToolAccuracy", label: "No-Tool Accuracy", unit: "%", passThreshold: 80, higherIsBetter: true },
     ],
   },
   {

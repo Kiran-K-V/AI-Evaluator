@@ -85,6 +85,12 @@ export interface MetricDefinition {
   higherIsBetter: boolean;
 }
 
+export interface ToolCall {
+  id: string;
+  type: string;
+  function: { name: string; arguments: string };
+}
+
 export interface ApiResponse {
   content: string;
   usage: {
@@ -93,9 +99,7 @@ export interface ApiResponse {
     total_tokens: number;
   };
   latency: number;
-  toolCalls?: {
-    id: string;
-    type: string;
-    function: { name: string; arguments: string };
-  }[];
+  toolCalls?: ToolCall[];
+  /** Finish reason from the API (e.g. "stop", "tool_calls"). */
+  finishReason?: string;
 }

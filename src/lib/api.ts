@@ -1,9 +1,28 @@
-import type { ApiResponse, ModelConfig } from "./types";
+import type { ApiResponse, ModelConfig, ToolCall } from "./types";
 
-interface ChatMessage {
-  role: "system" | "user" | "assistant";
+interface SystemMessage {
+  role: "system";
   content: string;
 }
+
+interface UserMessage {
+  role: "user";
+  content: string;
+}
+
+interface AssistantMessage {
+  role: "assistant";
+  content: string | null;
+  tool_calls?: ToolCall[];
+}
+
+interface ToolResultMessage {
+  role: "tool";
+  tool_call_id: string;
+  content: string;
+}
+
+export type ChatMessage = SystemMessage | UserMessage | AssistantMessage | ToolResultMessage;
 
 interface CallModelOptions {
   messages: ChatMessage[];
@@ -91,6 +110,7 @@ export async function callModel(options: CallModelOptions): Promise<ApiResponse>
     usage: data.usage ?? { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     latency,
     toolCalls: choice?.message?.tool_calls,
+    finishReason: choice?.finish_reason,
   };
 }
 
