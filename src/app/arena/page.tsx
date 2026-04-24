@@ -6,19 +6,20 @@ import { toast } from "sonner";
 import {
   Swords, Loader2, Trophy, Crown, Check,
   Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope, FlaskConical,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PassFailBadge } from "@/components/metrics/pass-fail-badge";
 import { EvalProgressBar } from "@/components/evaluation/progress-bar";
 import { v4 as uuidv4 } from "uuid";
 import { MODULES } from "@/lib/modules";
-import { getModelConfig } from "@/lib/settings";
+import { getAppConfig } from "@/lib/settings";
 import { runEvaluation } from "@/lib/evaluators";
 import { saveRun } from "@/lib/db";
-import type { ModuleSlug, EvaluationResult } from "@/lib/types";
-import { cn, getResultScore, compareArenaResults } from "@/lib/utils";
+import type { ModuleSlug, EvaluationResult, ModelEntry } from "@/lib/types";
+import { cn, compareArenaResults } from "@/lib/utils";
+import Link from "next/link";
 
 const iconMap: Record<string, React.ElementType> = { Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
@@ -31,8 +32,9 @@ interface ArenaResult {
 }
 
 export default function ArenaPage() {
-  const [modelA, setModelA] = useState({ name: "gpt-4o-mini", apiKey: "", baseUrl: "https://api.openai.com/v1" });
-  const [modelB, setModelB] = useState({ name: "gpt-4o", apiKey: "", baseUrl: "https://api.openai.com/v1" });
+  const [models, setModels] = useState<ModelEntry[]>([]);
+  const [selectedA, setSelectedA] = useState("");
+  const [selectedB, setSelectedB] = useState("");
   const [mounted, setMounted] = useState(false);
   const [running, setRunning] = useState(false);
   const [currentInfo, setCurrentInfo] = useState("");
@@ -45,13 +47,24 @@ export default function ArenaPage() {
   );
 
   useEffect(() => {
-    const config = getModelConfig();
+    const config = getAppConfig();
     requestAnimationFrame(() => {
-      setModelA((prev) => ({ ...prev, apiKey: config.apiKey, baseUrl: config.baseUrl, name: config.model }));
-      setModelB((prev) => ({ ...prev, apiKey: config.apiKey, baseUrl: config.baseUrl }));
+      setModels(config.models);
+      if (config.models.length >= 2) {
+        setSelectedA(config.models[0].id);
+        setSelectedB(config.models[1].id);
+      } else if (config.models.length === 1) {
+        setSelectedA(config.models[0].id);
+      }
       setMounted(true);
     });
   }, []);
+
+  const getEntry = (id: string) => models.find((m) => m.id === id);
+  const getLabel = (id: string) => {
+    const e = getEntry(id);
+    return e ? (e.name || e.model) : "Not selected";
+  };
 
   const toggleModule = (slug: string) => {
     setEnabledModules((prev) => ({ ...prev, [slug]: !prev[slug] }));
@@ -65,12 +78,19 @@ export default function ArenaPage() {
   const selectedModules = MODULES.filter((m) => enabledModules[m.slug]);
 
   const handleRunArena = async () => {
-    if (!modelA.apiKey || !modelB.apiKey) { toast.error("Both models need API keys"); return; }
+    const entryA = getEntry(selectedA);
+    const entryB = getEntry(selectedB);
+    if (!entryA || !entryB) { toast.error("Select both models"); return; }
     if (selectedModules.length === 0) { toast.error("Select at least one module"); return; }
 
     setRunning(true);
     const arenaGroupId = uuidv4();
-    const arenaLabel = `Arena: ${modelA.name} vs ${modelB.name}`;
+    const nameA = entryA.name || entryA.model;
+    const nameB = entryB.name || entryB.model;
+    const arenaLabel = `Arena: ${nameA} vs ${nameB}`;
+    const configA = { apiKey: entryA.apiKey, model: entryA.model, baseUrl: entryA.baseUrl };
+    const configB = { apiKey: entryB.apiKey, model: entryB.model, baseUrl: entryB.baseUrl };
+
     const updated: ArenaResult[] = MODULES.map((m) => ({
       slug: m.slug,
       modelA: null,
@@ -85,34 +105,34 @@ export default function ArenaPage() {
       if (!enabledModules[mod.slug]) continue;
       const cases = mod.sampleInput as unknown[];
 
-      setCurrentInfo(`${mod.name} — ${modelA.name}`);
+      setCurrentInfo(`${mod.name} — ${nameA}`);
       updated[i] = { ...updated[i], statusA: "running" };
       setResults([...updated]);
       try {
-        const resultA = await runEvaluation(mod.slug, cases, { apiKey: modelA.apiKey, model: modelA.name, baseUrl: modelA.baseUrl }, (c, t) => setProgress({ current: c, total: t }));
+        const resultA = await runEvaluation(mod.slug, cases, configA, (c, t) => setProgress({ current: c, total: t }));
         updated[i] = { ...updated[i], modelA: resultA, statusA: "done" };
         await saveRun({
           id: uuidv4(), module: mod.slug, timestamp: new Date().toISOString(),
           metrics: resultA.metrics, cases: resultA.results, passed: resultA.passed,
-          modelConfig: { model: modelA.name, baseUrl: modelA.baseUrl },
+          modelConfig: { model: entryA.model, baseUrl: entryA.baseUrl },
           runType: "arena", groupId: arenaGroupId, groupLabel: arenaLabel,
-          tags: [modelA.name, "arena"],
+          tags: [nameA, "arena"],
         });
       } catch { updated[i] = { ...updated[i], statusA: "error" }; }
       setResults([...updated]);
 
-      setCurrentInfo(`${mod.name} — ${modelB.name}`);
+      setCurrentInfo(`${mod.name} — ${nameB}`);
       updated[i] = { ...updated[i], statusB: "running" };
       setResults([...updated]);
       try {
-        const resultB = await runEvaluation(mod.slug, cases, { apiKey: modelB.apiKey, model: modelB.name, baseUrl: modelB.baseUrl }, (c, t) => setProgress({ current: c, total: t }));
+        const resultB = await runEvaluation(mod.slug, cases, configB, (c, t) => setProgress({ current: c, total: t }));
         updated[i] = { ...updated[i], modelB: resultB, statusB: "done" };
         await saveRun({
           id: uuidv4(), module: mod.slug, timestamp: new Date().toISOString(),
           metrics: resultB.metrics, cases: resultB.results, passed: resultB.passed,
-          modelConfig: { model: modelB.name, baseUrl: modelB.baseUrl },
+          modelConfig: { model: entryB.model, baseUrl: entryB.baseUrl },
           runType: "arena", groupId: arenaGroupId, groupLabel: arenaLabel,
-          tags: [modelB.name, "arena"],
+          tags: [nameB, "arena"],
         });
       } catch { updated[i] = { ...updated[i], statusB: "error" }; }
       setResults([...updated]);
@@ -135,6 +155,10 @@ export default function ArenaPage() {
     else draws++;
   }
 
+  const nameA = getLabel(selectedA);
+  const nameB = getLabel(selectedB);
+  const canRun = selectedA && selectedB && selectedModules.length > 0;
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Config */}
@@ -150,36 +174,109 @@ export default function ArenaPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Model A */}
-            <div className="glass-subtle rounded-xl p-4 ring-1 ring-sky-500/20">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-sky-500" />
-                <span className="text-sm font-bold text-sky-600">Model A (Challenger)</span>
+          {/* Model picker */}
+          {models.length >= 2 ? (
+            <div className="grid gap-4 lg:grid-cols-2 mb-5">
+              {/* Model A picker */}
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-400">Model A &mdash; Challenger</Label>
+                <div className="space-y-1.5">
+                  {models.map((m) => {
+                    const active = m.id === selectedA;
+                    const takenByB = m.id === selectedB;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => { if (!takenByB) setSelectedA(m.id); }}
+                        disabled={running || takenByB}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all",
+                          active
+                            ? "glass ring-1 ring-sky-500/40 shadow-md shadow-sky-500/10"
+                            : takenByB
+                              ? "glass-subtle opacity-30 cursor-not-allowed"
+                              : "glass-subtle hover:ring-1 hover:ring-sky-500/20"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border-2 shrink-0 transition-colors",
+                          active ? "border-sky-500 bg-sky-500" : "border-muted-foreground/30"
+                        )}>
+                          {active && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-sm font-semibold truncate", active ? "text-sky-400" : "text-foreground")}>{m.name || m.model}</p>
+                          <p className="text-[10px] text-muted-foreground/50 truncate">{m.provider} &middot; {m.model}</p>
+                        </div>
+                        {takenByB && <span className="text-[9px] font-bold text-orange-400/60 shrink-0">Model B</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="space-y-3">
-                <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Model Name</Label><Input value={modelA.name} onChange={(e) => setModelA({ ...modelA, name: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
-                <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">API Key</Label><Input type="password" value={modelA.apiKey} onChange={(e) => setModelA({ ...modelA, apiKey: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
-                <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Base URL</Label><Input value={modelA.baseUrl} onChange={(e) => setModelA({ ...modelA, baseUrl: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
-              </div>
-            </div>
 
-            {/* Model B */}
-            <div className="glass-subtle rounded-xl p-4 ring-1 ring-orange-500/20">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-orange-500" />
-                <span className="text-sm font-bold text-orange-400">Model B (Defender)</span>
-              </div>
-              <div className="space-y-3">
-                <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Model Name</Label><Input value={modelB.name} onChange={(e) => setModelB({ ...modelB, name: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
-                <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">API Key</Label><Input type="password" value={modelB.apiKey} onChange={(e) => setModelB({ ...modelB, apiKey: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
-                <div><Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Base URL</Label><Input value={modelB.baseUrl} onChange={(e) => setModelB({ ...modelB, baseUrl: e.target.value })} className="mt-1 glass-subtle rounded-xl" /></div>
+              {/* Model B picker */}
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-orange-400">Model B &mdash; Defender</Label>
+                <div className="space-y-1.5">
+                  {models.map((m) => {
+                    const active = m.id === selectedB;
+                    const takenByA = m.id === selectedA;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => { if (!takenByA) setSelectedB(m.id); }}
+                        disabled={running || takenByA}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all",
+                          active
+                            ? "glass ring-1 ring-orange-500/40 shadow-md shadow-orange-500/10"
+                            : takenByA
+                              ? "glass-subtle opacity-30 cursor-not-allowed"
+                              : "glass-subtle hover:ring-1 hover:ring-orange-500/20"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border-2 shrink-0 transition-colors",
+                          active ? "border-orange-500 bg-orange-500" : "border-muted-foreground/30"
+                        )}>
+                          {active && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-sm font-semibold truncate", active ? "text-orange-400" : "text-foreground")}>{m.name || m.model}</p>
+                          <p className="text-[10px] text-muted-foreground/50 truncate">{m.provider} &middot; {m.model}</p>
+                        </div>
+                        {takenByA && <span className="text-[9px] font-bold text-sky-400/60 shrink-0">Model A</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-5 flex items-center gap-2 rounded-xl ring-1 ring-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-400">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>Add at least 2 models in <Link href="/settings" className="underline font-semibold">Settings</Link> to use the Arena.</span>
+            </div>
+          )}
+
+          {/* Selected summary */}
+          {selectedA && selectedB && (
+            <div className="mb-5 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-sky-500" />
+                <span className="text-sm font-bold text-sky-400">{nameA}</span>
+              </div>
+              <span className="text-xs font-bold text-muted-foreground/40">VS</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-orange-400">{nameB}</span>
+                <div className="h-3 w-3 rounded-full bg-orange-500" />
+              </div>
+            </div>
+          )}
 
           {/* Module selection */}
-          <div className="mt-5">
+          <div>
             <div className="mb-2 flex items-center justify-between">
               <Label className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Modules to Compare</Label>
               <button onClick={toggleAll} className="text-[10px] font-semibold text-orange-400 hover:text-orange-300 transition-colors">
@@ -217,7 +314,11 @@ export default function ArenaPage() {
           </div>
 
           <div>
-            <Button onClick={handleRunArena} disabled={running || !modelA.apiKey || !modelB.apiKey || selectedModules.length === 0} className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow">
+            <Button
+              onClick={handleRunArena}
+              disabled={running || !canRun}
+              className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-shadow"
+            >
               {running ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Battle in progress...</>) : (<><Swords className="mr-2 h-4 w-4" />Start Arena ({selectedModules.length} Modules)</>)}
             </Button>
           </div>
@@ -241,7 +342,7 @@ export default function ArenaPage() {
             <div className={cn("glass rounded-2xl p-5 text-center ring-1", winsA > winsB ? "ring-sky-500/40" : "ring-border/30")}>
               {winsA > winsB && <Crown className="mx-auto mb-1 h-5 w-5 text-sky-500" />}
               <p className="text-3xl font-bold text-sky-500">{winsA}</p>
-              <p className="text-xs font-semibold text-muted-foreground mt-1">{modelA.name}</p>
+              <p className="text-xs font-semibold text-muted-foreground mt-1">{nameA}</p>
             </div>
             <div className="glass rounded-2xl p-5 text-center">
               <Trophy className="mx-auto mb-1 h-5 w-5 text-muted-foreground/50" />
@@ -251,7 +352,7 @@ export default function ArenaPage() {
             <div className={cn("glass rounded-2xl p-5 text-center ring-1", winsB > winsA ? "ring-orange-500/40" : "ring-border/30")}>
               {winsB > winsA && <Crown className="mx-auto mb-1 h-5 w-5 text-orange-400" />}
               <p className="text-3xl font-bold text-orange-400">{winsB}</p>
-              <p className="text-xs font-semibold text-muted-foreground mt-1">{modelB.name}</p>
+              <p className="text-xs font-semibold text-muted-foreground mt-1">{nameB}</p>
             </div>
           </div>
         </motion.div>
@@ -322,7 +423,7 @@ export default function ArenaPage() {
                   <div className="mt-3 flex items-center justify-between">
                     <PassFailBadge passed={r.modelA?.passed ?? false} />
                     <span className={cn("text-xs font-bold px-3 py-1 rounded-lg", winner === "A" ? "text-sky-500 bg-sky-500/10" : winner === "B" ? "text-orange-500 bg-orange-500/10" : "text-muted-foreground bg-muted/30")}>
-                      {winner === "A" ? `${modelA.name} wins` : winner === "B" ? `${modelB.name} wins` : "Draw"}
+                      {winner === "A" ? `${nameA} wins` : winner === "B" ? `${nameB} wins` : "Draw"}
                     </span>
                     <PassFailBadge passed={r.modelB?.passed ?? false} />
                   </div>
