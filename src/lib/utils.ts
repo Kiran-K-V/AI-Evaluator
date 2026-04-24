@@ -37,3 +37,48 @@ export function getResultScore(slug: string, result: EvaluationResult): number {
   }, 0);
   return sum / pctDefs.length;
 }
+
+/**
+ * Compare two results for arena mode, returning positive if A wins,
+ * negative if B wins, and 0 for a tie.
+ * Handles all metric types: percentage (higher/lower is better) and
+ * non-percentage metrics like latency/cost (lower is better).
+ */
+export function compareArenaResults(slug: string, resultA: EvaluationResult, resultB: EvaluationResult): number {
+  const mod = MODULES.find((m) => m.slug === slug);
+  if (!mod) return 0;
+
+  let aWins = 0;
+  let bWins = 0;
+
+  for (const def of mod.metricDefinitions) {
+    const valA = resultA.metrics[def.key] ?? 0;
+    const valB = resultB.metrics[def.key] ?? 0;
+
+    if (def.unit === "%") {
+      const tolerance = 0.5;
+      if (Math.abs(valA - valB) <= tolerance) continue;
+      if (def.higherIsBetter) {
+        if (valA > valB) aWins++;
+        else bWins++;
+      } else {
+        if (valA < valB) aWins++;
+        else bWins++;
+      }
+    } else {
+      const maxVal = Math.max(Math.abs(valA), Math.abs(valB), 1);
+      const relDiff = Math.abs(valA - valB) / maxVal;
+      if (relDiff < 0.01) continue;
+
+      if (def.higherIsBetter) {
+        if (valA > valB) aWins++;
+        else bWins++;
+      } else {
+        if (valA < valB) aWins++;
+        else bWins++;
+      }
+    }
+  }
+
+  return aWins - bWins;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { callModel } from "@/lib/api";
-import { getModelConfig, getJudgeConfig, getActiveModelName, getJudgeModelName, isConfigured } from "@/lib/settings";
+import { getAppConfig, getJudgeConfig, getJudgeModelName, isConfigured } from "@/lib/settings";
 import { llmJudge } from "@/lib/evaluators/llm-judge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import type { ModelEntry } from "@/lib/types";
 
 const AB_JUDGE_SYSTEM = `You are an expert pairwise evaluator. You compare two AI model responses to the same question and determine which one is better.
 
@@ -74,13 +75,45 @@ export default function ABTestingPage() {
   const [result, setResult] = useState<ABResult | null>(null);
   const [showCriteria, setShowCriteria] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [models, setModels] = useState<ModelEntry[]>([]);
+  const [selectedModelA, setSelectedModelA] = useState("");
+  const [selectedModelB, setSelectedModelB] = useState("");
+
+  useEffect(() => {
+    const config = getAppConfig();
+    setModels(config.models);
+    if (config.models.length >= 2) {
+      setSelectedModelA(config.models[0].id);
+      setSelectedModelB(config.models[1].id);
+    } else if (config.models.length === 1) {
+      setSelectedModelA(config.models[0].id);
+      setSelectedModelB(config.models[0].id);
+    }
+  }, []);
+
+  const getSelectedModelConfig = (modelId: string) => {
+    const entry = models.find((m) => m.id === modelId);
+    if (!entry) return null;
+    return { apiKey: entry.apiKey, model: entry.model, baseUrl: entry.baseUrl };
+  };
+
+  const getModelLabel = (modelId: string) => {
+    const entry = models.find((m) => m.id === modelId);
+    return entry?.name || entry?.model || "Not selected";
+  };
 
   const handleRun = useCallback(async () => {
     if (!prompt.trim()) { toast.error("Enter a prompt"); return; }
 
-    const config = getModelConfig();
-    const isLocal = config.baseUrl.includes("localhost") || config.baseUrl.includes("127.0.0.1");
-    if (!isLocal && !config.apiKey && mode === "generate") { toast.error("Configure API key first"); return; }
+    if (mode === "generate") {
+      const configA = getSelectedModelConfig(selectedModelA);
+      const configB = getSelectedModelConfig(selectedModelB);
+      if (!configA || !configB) { toast.error("Select both models"); return; }
+      const isLocalA = configA.baseUrl.includes("localhost") || configA.baseUrl.includes("127.0.0.1");
+      const isLocalB = configB.baseUrl.includes("localhost") || configB.baseUrl.includes("127.0.0.1");
+      if (!isLocalA && !configA.apiKey) { toast.error("Model A has no API key configured"); return; }
+      if (!isLocalB && !configB.apiKey) { toast.error("Model B has no API key configured"); return; }
+    }
     if (mode === "paste" && (!responseA.trim() || !responseB.trim())) { toast.error("Paste both responses"); return; }
 
     setRunning(true);
@@ -91,9 +124,11 @@ export default function ABTestingPage() {
       let resB = responseB;
 
       if (mode === "generate") {
+        const configA = getSelectedModelConfig(selectedModelA)!;
+        const configB = getSelectedModelConfig(selectedModelB)!;
         const [respA, respB] = await Promise.all([
-          callModel({ messages: [{ role: "user", content: prompt }], config }),
-          callModel({ messages: [{ role: "user", content: prompt }], config }),
+          callModel({ messages: [{ role: "user", content: prompt }], config: configA }),
+          callModel({ messages: [{ role: "user", content: prompt }], config: configB }),
         ]);
         resA = respA.content;
         resB = respB.content;
@@ -142,7 +177,7 @@ export default function ABTestingPage() {
     } finally {
       setRunning(false);
     }
-  }, [prompt, responseA, responseB, criteria, mode]);
+  }, [prompt, responseA, responseB, criteria, mode, selectedModelA, selectedModelB, models]);
 
   const configured = isConfigured();
 
@@ -163,7 +198,10 @@ export default function ABTestingPage() {
               <h2 className="text-xl font-bold">A/B Pairwise Comparison</h2>
               <p className="text-xs text-muted-foreground">
                 Judge: <span className="font-semibold text-violet-400">{getJudgeModelName()}</span>
-                {mode === "generate" && <> &middot; Model: <span className="font-semibold text-emerald-400">{getActiveModelName()}</span></>}
+                {mode === "generate" && <>
+                  {" "}&middot; A: <span className="font-semibold text-sky-400">{getModelLabel(selectedModelA)}</span>
+                  {" "}&middot; B: <span className="font-semibold text-orange-400">{getModelLabel(selectedModelB)}</span>
+                </>}
               </p>
             </div>
           </div>
@@ -183,6 +221,44 @@ export default function ABTestingPage() {
               </button>
             ))}
           </div>
+
+          {/* Model selectors (generate mode only) */}
+          {mode === "generate" && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-sky-400">Model A</Label>
+                {models.length > 0 ? (
+                  <select
+                    value={selectedModelA}
+                    onChange={(e) => setSelectedModelA(e.target.value)}
+                    className="w-full glass-subtle rounded-xl px-3 py-2.5 text-sm bg-transparent border-0 ring-1 ring-border/30 focus:ring-sky-500/50 transition-all"
+                  >
+                    {models.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name || m.model} ({m.provider})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No models configured. <Link href="/settings" className="underline text-sky-400">Add models in Settings</Link></p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-orange-400">Model B</Label>
+                {models.length > 0 ? (
+                  <select
+                    value={selectedModelB}
+                    onChange={(e) => setSelectedModelB(e.target.value)}
+                    className="w-full glass-subtle rounded-xl px-3 py-2.5 text-sm bg-transparent border-0 ring-1 ring-border/30 focus:ring-orange-500/50 transition-all"
+                  >
+                    {models.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name || m.model} ({m.provider})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No models configured. <Link href="/settings" className="underline text-orange-400">Add models in Settings</Link></p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Prompt */}
           <div className="space-y-2">
@@ -253,15 +329,20 @@ export default function ABTestingPage() {
             </AnimatePresence>
           </div>
 
-          {!configured && (
+          {!configured && mode === "paste" && (
             <div className="flex items-center gap-2 rounded-xl ring-1 ring-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-400">
-              API not configured. <Link href="/settings" className="underline font-semibold">Go to Settings</Link>
+              Judge model not configured. <Link href="/settings" className="underline font-semibold">Go to Settings</Link>
+            </div>
+          )}
+          {models.length < 2 && mode === "generate" && (
+            <div className="flex items-center gap-2 rounded-xl ring-1 ring-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-400">
+              Add at least 2 models for A/B comparison. <Link href="/settings" className="underline font-semibold">Go to Settings</Link>
             </div>
           )}
 
           <Button
             onClick={handleRun}
-            disabled={running || !prompt.trim() || (mode === "paste" && (!responseA.trim() || !responseB.trim()))}
+            disabled={running || !prompt.trim() || (mode === "paste" && (!responseA.trim() || !responseB.trim())) || (mode === "generate" && (!selectedModelA || !selectedModelB || models.length === 0))}
             className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 transition-shadow"
           >
             {running ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Comparing...</> : <><Play className="mr-2 h-4 w-4" />Run Comparison</>}
@@ -338,7 +419,7 @@ export default function ABTestingPage() {
             <div className={cn("glass rounded-2xl p-5", result.winner === "A" && "ring-1 ring-sky-500/30")}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-3 w-3 rounded-full bg-sky-500" />
-                <h4 className="text-sm font-bold">Response A</h4>
+                <h4 className="text-sm font-bold">Response A {mode === "generate" && <span className="font-normal text-muted-foreground">({getModelLabel(selectedModelA)})</span>}</h4>
                 {result.winner === "A" && <Trophy className="h-4 w-4 text-sky-400" />}
               </div>
               <pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed text-muted-foreground glass-subtle rounded-xl p-3 max-h-60 overflow-auto">{result.responseA}</pre>
@@ -346,7 +427,7 @@ export default function ABTestingPage() {
             <div className={cn("glass rounded-2xl p-5", result.winner === "B" && "ring-1 ring-orange-500/30")}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-3 w-3 rounded-full bg-orange-500" />
-                <h4 className="text-sm font-bold">Response B</h4>
+                <h4 className="text-sm font-bold">Response B {mode === "generate" && <span className="font-normal text-muted-foreground">({getModelLabel(selectedModelB)})</span>}</h4>
                 {result.winner === "B" && <Trophy className="h-4 w-4 text-orange-400" />}
               </div>
               <pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed text-muted-foreground glass-subtle rounded-xl p-3 max-h-60 overflow-auto">{result.responseB}</pre>

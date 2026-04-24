@@ -18,7 +18,7 @@ import { getModelConfig } from "@/lib/settings";
 import { runEvaluation } from "@/lib/evaluators";
 import { saveRun } from "@/lib/db";
 import type { ModuleSlug, EvaluationResult } from "@/lib/types";
-import { cn, getResultScore } from "@/lib/utils";
+import { cn, getResultScore, compareArenaResults } from "@/lib/utils";
 
 const iconMap: Record<string, React.ElementType> = { Wrench, Brain, Shield, Braces, Tags, Gauge, GraduationCap, RefreshCcw, FileText, Microscope };
 
@@ -129,11 +129,10 @@ export default function ArenaPage() {
   let winsA = 0, winsB = 0, draws = 0;
   for (const r of doneResults) {
     if (!r.modelA || !r.modelB) continue;
-    const scoreA = getResultScore(r.slug, r.modelA);
-    const scoreB = getResultScore(r.slug, r.modelB);
-    if (Math.abs(scoreA - scoreB) < 2) draws++;
-    else if (scoreA > scoreB) winsA++;
-    else winsB++;
+    const cmp = compareArenaResults(r.slug, r.modelA, r.modelB);
+    if (cmp > 0) winsA++;
+    else if (cmp < 0) winsB++;
+    else draws++;
   }
 
   return (
@@ -264,11 +263,10 @@ export default function ArenaPage() {
           const mod = MODULES.find((m) => m.slug === r.slug)!;
           const Icon = iconMap[mod.icon] || FlaskConical;
 
-          const scoreA = r.modelA ? getResultScore(r.slug, r.modelA) : 0;
-          const scoreB = r.modelB ? getResultScore(r.slug, r.modelB) : 0;
           const isRunning = r.statusA === "running" || r.statusB === "running";
           const isDone = r.statusA === "done" && r.statusB === "done";
-          const winner = isDone ? (Math.abs(scoreA - scoreB) < 2 ? "draw" : scoreA > scoreB ? "A" : "B") : null;
+          const cmp = isDone && r.modelA && r.modelB ? compareArenaResults(r.slug, r.modelA, r.modelB) : 0;
+          const winner = isDone ? (cmp > 0 ? "A" : cmp < 0 ? "B" : "draw") : null;
 
           return (
             <motion.div key={r.slug} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>

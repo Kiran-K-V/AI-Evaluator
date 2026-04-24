@@ -86,10 +86,14 @@ export async function evaluate(
         completed++;
         onProgress(completed, totalWork);
 
+        const formattedModelOutput = responses
+          .map((r, i) => `── Response ${i + 1} of ${numRuns} ──\n${r}`)
+          .join("\n\n");
+
         return {
           result: {
             input: { prompt: tc.prompt, category: tc.category, runs: numRuns },
-            modelOutput: `${numRuns} responses collected. Sample:\n${responses[0]?.slice(0, 200)}...`,
+            modelOutput: formattedModelOutput,
             expected: "Consistent responses across all runs",
             passed: verdict.passed,
             score: verdict.score,
@@ -100,7 +104,7 @@ export async function evaluate(
               judgeConfidence: verdict.confidence,
               factualConsistency,
               semanticStability,
-              allResponses: responses.map((r) => r.slice(0, 300)),
+              allResponses: responses,
             },
           } as CaseResult,
           category: tc.category,

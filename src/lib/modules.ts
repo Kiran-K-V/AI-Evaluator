@@ -72,6 +72,39 @@ export const MODULES: ModuleInfo[] = [
           { name: "search_web", description: "Search the web for information", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
         ],
       },
+      // MULTI-TOOL: Task explicitly requires TWO tools — weather + calendar.
+      // Model must call BOTH get_weather and create_calendar_event, not just one.
+      {
+        task: "Check the weather in San Francisco this weekend, and if it's sunny, block my Saturday afternoon from 2-5pm for a park picnic",
+        expected_tool: ["get_weather", "create_calendar_event"],
+        tools: [
+          { name: "get_weather", description: "Get current and forecast weather for a location", parameters: { type: "object", properties: { location: { type: "string" }, days: { type: "number" } }, required: ["location"] } },
+          { name: "create_calendar_event", description: "Create and schedule a calendar event or time block", parameters: { type: "object", properties: { title: { type: "string" }, start_time: { type: "string" }, end_time: { type: "string" } }, required: ["title", "start_time", "end_time"] } },
+          { name: "send_email", description: "Send an email to a recipient", parameters: { type: "object", properties: { to: { type: "string" }, subject: { type: "string" }, body: { type: "string" } }, required: ["to", "subject", "body"] } },
+        ],
+      },
+      // MULTI-TOOL: Task requires search + calculate — get data then compute.
+      // Model should NOT try to calculate without first fetching the exchange rate.
+      {
+        task: "Look up today's EUR to USD exchange rate and calculate how much 15,000 EUR is in USD",
+        expected_tool: ["get_exchange_rate", "calculate"],
+        tools: [
+          { name: "get_exchange_rate", description: "Fetch real-time currency exchange rates", parameters: { type: "object", properties: { from: { type: "string" }, to: { type: "string" } }, required: ["from", "to"] } },
+          { name: "calculate", description: "Perform mathematical calculations given an expression", parameters: { type: "object", properties: { expression: { type: "string" } }, required: ["expression"] } },
+          { name: "search_web", description: "Search the web for general information", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+        ],
+      },
+      // SINGLE-TOOL STRICT: Only one tool should be called — do NOT call extra tools.
+      // Tests that the model doesn't over-call when only one tool is needed.
+      {
+        task: "What time is it right now in Tokyo?",
+        expected_tool: "get_time",
+        tools: [
+          { name: "get_time", description: "Get the current time in a specified timezone", parameters: { type: "object", properties: { timezone: { type: "string" } }, required: ["timezone"] } },
+          { name: "get_weather", description: "Get current weather for a location", parameters: { type: "object", properties: { location: { type: "string" } }, required: ["location"] } },
+          { name: "search_web", description: "Search the web for information", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+        ],
+      },
     ],
     metricDefinitions: [
       { key: "toolSelectionAccuracy", label: "Tool Selection Accuracy", unit: "%", passThreshold: 80, higherIsBetter: true },
